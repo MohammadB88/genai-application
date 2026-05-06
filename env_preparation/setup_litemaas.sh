@@ -25,7 +25,7 @@ chmod +x ../ai-gateways/litemaas/users.sh
 echo "Finding OpenShift cluster URL..."
 # Assuming oc is installed and configured
 if command -v oc &> /dev/null; then
-    CLUSTER_URL=$(oc whoami --show-server)
+    CLUSTER_URL=$(oc get route -n openshift-console console -o jsonpath='{.spec.host}' | sed 's|console-openshift-console\.||')
     echo "Cluster URL: $CLUSTER_URL"
 else
     echo "oc command not found. Please install OpenShift CLI."
