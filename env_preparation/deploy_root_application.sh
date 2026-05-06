@@ -68,85 +68,85 @@ else
   echo "**********************"
 fi
 
-echo " "
-echo "**********************"
-echo "**********************"
-echo -e "${BLUE}=== Preparing LiteMaaS installation ===${NC}"
-echo "**********************"
-echo "**********************"
+# echo " "
+# echo "**********************"
+# echo "**********************"
+# echo -e "${BLUE}=== Preparing LiteMaaS installation ===${NC}"
+# echo "**********************"
+# echo "**********************"
 
-echo -e "${BLUE}=== Detecting cluster URL ===${NC}"
-# Detect cluster URL from kubeconfig
-detect_cluster_url() {
-  local api_server
-  api_server=$($KUBECTL_CMD cluster-info | grep 'Kubernetes master' | awk -F'[:/]' '{print $NF}')
+# echo -e "${BLUE}=== Detecting cluster URL ===${NC}"
+# # Detect cluster URL from kubeconfig
+# detect_cluster_url() {
+#   local api_server
+#   api_server=$($KUBECTL_CMD cluster-info | grep 'Kubernetes master' | awk -F'[:/]' '{print $NF}')
   
-  if [[ -z "$api_server" ]]; then
-    # Fallback: extract from kubeconfig
-    api_server=$(kubectl config view --raw -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null | sed 's|https://||' | sed 's|http://||' | cut -d':' -f1)
-  fi
+#   if [[ -z "$api_server" ]]; then
+#     # Fallback: extract from kubeconfig
+#     api_server=$(kubectl config view --raw -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null | sed 's|https://||' | sed 's|http://||' | cut -d':' -f1)
+#   fi
   
-  echo "$api_server"
-}
+#   echo "$api_server"
+# }
 
-CLUSTER_URL="$(detect_cluster_url || echo "")"
-if [[ -z "$CLUSTER_URL" ]]; then
-  echo -e "${RED}Error: Could not detect cluster URL.${NC}"
-  exit 1
-fi
+# CLUSTER_URL="$(detect_cluster_url || echo "")"
+# if [[ -z "$CLUSTER_URL" ]]; then
+#   echo -e "${RED}Error: Could not detect cluster URL.${NC}"
+#   exit 1
+# fi
 
-echo -e "${GREEN}Detected cluster URL: $CLUSTER_URL${NC}"
+# echo -e "${GREEN}Detected cluster URL: $CLUSTER_URL${NC}"
 
-LITEMAAS_DIR="$SCRIPT_DIR/../ai-gateways/litemaas"
-OAUTHCLIENT_FILE="$LITEMAAS_DIR/oauthclient.yaml"
-USERS_SCRIPT="$LITEMAAS_DIR/users.sh"
-VALUES_FILE="$LITEMAAS_DIR/values_oc.yaml"
+# LITEMAAS_DIR="$SCRIPT_DIR/../ai-gateways/litemaas"
+# OAUTHCLIENT_FILE="$LITEMAAS_DIR/oauthclient.yaml"
+# USERS_SCRIPT="$LITEMAAS_DIR/users.sh"
+# VALUES_FILE="$LITEMAAS_DIR/values_oc.yaml"
 
-# Deploy OAuthClient
-if [[ -f "$OAUTHCLIENT_FILE" ]]; then
-  echo -e "${BLUE}Deploying OAuthClient from $OAUTHCLIENT_FILE${NC}"
+# # Deploy OAuthClient
+# if [[ -f "$OAUTHCLIENT_FILE" ]]; then
+#   echo -e "${BLUE}Deploying OAuthClient from $OAUTHCLIENT_FILE${NC}"
   
-  # Create a temporary file with CLUSTER_URL substituted
-  temp_oauthclient=$(mktemp)
-  sed "s/\${CLUSTER_URL}/$CLUSTER_URL/g" "$OAUTHCLIENT_FILE" > "$temp_oauthclient"
+#   # Create a temporary file with CLUSTER_URL substituted
+#   temp_oauthclient=$(mktemp)
+#   sed "s/\${CLUSTER_URL}/$CLUSTER_URL/g" "$OAUTHCLIENT_FILE" > "$temp_oauthclient"
   
-  $KUBECTL_CMD apply -f "$temp_oauthclient"
-  rm -f "$temp_oauthclient"
+#   $KUBECTL_CMD apply -f "$temp_oauthclient"
+#   rm -f "$temp_oauthclient"
   
-  echo -e "${GREEN}OAuthClient deployed with cluster URL: $CLUSTER_URL${NC}"
-else
-  echo -e "${YELLOW}Warning: OAuthClient file not found at $OAUTHCLIENT_FILE${NC}"
-fi
+#   echo -e "${GREEN}OAuthClient deployed with cluster URL: $CLUSTER_URL${NC}"
+# else
+#   echo -e "${YELLOW}Warning: OAuthClient file not found at $OAUTHCLIENT_FILE${NC}"
+# fi
 
-# Create ConfigMap with substituted values
-if [[ -f "$VALUES_FILE" ]]; then
-  echo -e "${BLUE}Creating ConfigMap with substituted values from $VALUES_FILE${NC}"
+# # Create ConfigMap with substituted values
+# if [[ -f "$VALUES_FILE" ]]; then
+#   echo -e "${BLUE}Creating ConfigMap with substituted values from $VALUES_FILE${NC}"
   
-  # Create a temporary file with CLUSTER_URL substituted
-  temp_values=$(mktemp)
-  sed "s/\${CLUSTER_URL}/$CLUSTER_URL/g" "$VALUES_FILE" > "$temp_values"
+#   # Create a temporary file with CLUSTER_URL substituted
+#   temp_values=$(mktemp)
+#   sed "s/\${CLUSTER_URL}/$CLUSTER_URL/g" "$VALUES_FILE" > "$temp_values"
   
-  $KUBECTL_CMD create configmap litemaas-values \
-    --from-file=values.yaml="$temp_values" \
-    -n litemaas --dry-run=client -o yaml | $KUBECTL_CMD apply -f -
+#   $KUBECTL_CMD create configmap litemaas-values \
+#     --from-file=values.yaml="$temp_values" \
+#     -n litemaas --dry-run=client -o yaml | $KUBECTL_CMD apply -f -
   
-  rm -f "$temp_values"
+#   rm -f "$temp_values"
   
-  echo -e "${GREEN}ConfigMap 'litemaas-values' created in namespace 'litemaas' with substituted cluster URL: $CLUSTER_URL${NC}"
-else
-  echo -e "${YELLOW}Warning: Values file not found at $VALUES_FILE${NC}"
-fi
+#   echo -e "${GREEN}ConfigMap 'litemaas-values' created in namespace 'litemaas' with substituted cluster URL: $CLUSTER_URL${NC}"
+# else
+#   echo -e "${YELLOW}Warning: Values file not found at $VALUES_FILE${NC}"
+# fi
 
-# Run users.sh script
-if [[ -f "$USERS_SCRIPT" ]]; then
-  echo -e "${BLUE}Running users.sh from $USERS_SCRIPT${NC}"
-  bash "$USERS_SCRIPT"
-  echo -e "${GREEN}Users script executed.${NC}"
-else
-  echo -e "${YELLOW}Warning: users.sh script not found at $USERS_SCRIPT${NC}"
-fi
+# # Run users.sh script
+# if [[ -f "$USERS_SCRIPT" ]]; then
+#   echo -e "${BLUE}Running users.sh from $USERS_SCRIPT${NC}"
+#   bash "$USERS_SCRIPT"
+#   echo -e "${GREEN}Users script executed.${NC}"
+# else
+#   echo -e "${YELLOW}Warning: users.sh script not found at $USERS_SCRIPT${NC}"
+# fi
 
-echo "**********************"
+# echo "**********************"
 
 
 echo " "

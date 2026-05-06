@@ -28,28 +28,28 @@ oauth:
 # -- Secrets — CHANGE ALL VALUES BELOW
 postgresql:
   auth:
-    password: "OPENSSL"
+    password: "${OPENSSL_RAND_NR}"
   persistence:
     # -- Storage size for the PostgreSQL PVC
     size: 10Gi
     # -- StorageClass name (empty = cluster default)
-    storageClass: "ocs-storagecluster-ceph-rbd"
-    # storageClass: "ocs-external-storagecluster-ceph-rbd"
+    # storageClass: "ocs-storagecluster-ceph-rbd"
+    storageClass: "ocs-external-storagecluster-ceph-rbd"
 
 litellm:
   auth:
-    masterKey: "sk-OPENSSL"
+    masterKey: "sk-${OPENSSL_RAND_NR_LITELM_MASTER_KEY}"        # Must match backend.auth.litellmApiKey
     uiUsername: "admin"
-    uiPassword: "PASSWORD"
+    uiPassword: "${PASSWORD_LITEMASS_ADMIN}"
 
 backend:
   litellmApiUrl:  "https://litemaas-litellm-litemaas.${CLUSTER_URL}"
   auth:
-    jwtSecret: "OPENSSL"
-    adminApiKeys: "OPENSSL"
-    litellmApiKey: "sk-OPENSSL"        # Must match litellm.auth.masterKey
+    jwtSecret: "${OPENSSL_RAND_NR}"
+    adminApiKeys: "${OPENSSL_RAND_NR}"
+    litellmApiKey: "sk-${OPENSSL_RAND_NR_LITELM_MASTER_KEY}"        # Must match litellm.auth.masterKey
     oauthClientId: "litemaas"
-    oauthClientSecret: "123456abcdef"
+    oauthClientSecret: "${OAUTH_CLIENT_SECRET}"
     oauthIssuer: "https://oauth-openshift.${CLUSTER_URL}"
     oauthCallbackUrl: "https://litemaas-litemaas.${CLUSTER_URL}/api/auth/callback"
     # -- Backup & Restore configuration
@@ -66,8 +66,8 @@ backend:
       # -- Storage size for the backup PVC
       size: 5Gi
       # -- StorageClass name (empty = cluster default)
-      storageClass: "ocs-storagecluster-ceph-rbd"
-      # storageClass: "ocs-external-storagecluster-ceph-rbd"
+      # storageClass: "ocs-storagecluster-ceph-rbd"
+      storageClass: "ocs-external-storagecluster-ceph-rbd"
   # -- Set to "0" to disable TLS verification (not recommended for production)
   nodeTlsRejectUnauthorized: "0"
     # On OpenShift, the deploying user is auto-detected as initial admin.

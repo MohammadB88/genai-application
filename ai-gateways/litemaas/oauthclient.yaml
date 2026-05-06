@@ -2,7 +2,7 @@ kind: OAuthClient
 apiVersion: oauth.openshift.io/v1
 metadata:
   name: litemaas
-secret: "PASSWORD"
+secret: "${OAUTH_CLIENT_SECRET}"
 redirectURIs:
   - "https://litemaas-litemaas.${CLUSTER_URL}/api/auth/callback"
 grantMethod: prompt
