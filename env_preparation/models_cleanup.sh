@@ -11,7 +11,6 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODELS_DIR="$SCRIPT_DIR/../models"
-NAMESPACE="llms"
 
 if command -v oc >/dev/null 2>&1; then
   KUBECTL_CMD="oc"
@@ -28,12 +27,6 @@ echo "This script will remove deployed models and their resources."
 echo " "
 echo "**********************"
 echo "**********************"
-
-# Check if namespace exists
-if ! $KUBECTL_CMD get namespace "$NAMESPACE" >/dev/null 2>&1; then
-  echo -e "${YELLOW}Namespace '$NAMESPACE' does not exist. Nothing to clean up.${NC}"
-  exit 0
-fi
 
 # Get deployed models based on kustomization.yaml paths
 echo -e "${BLUE}=== Discovering deployed models ===${NC}"
@@ -111,7 +104,7 @@ for model in "${MODELS_TO_DELETE[@]}"; do
   
   echo " "
   echo -e "${BLUE}Deleting model: ${model}${NC}"
-  $KUBECTL_CMD delete -k "$MODEL_DIR" -n "$NAMESPACE" || true
+  $KUBECTL_CMD delete -k "$MODEL_DIR" || true
   echo -e "${GREEN}Model delete command issued.${NC}"
 done
 
@@ -125,7 +118,7 @@ wait_for_deletion() {
   local attempt=1
   
   while [[ $attempt -le $max_attempts ]]; do
-    local remaining_resources=$($KUBECTL_CMD get all -n "$NAMESPACE" --no-headers 2>/dev/null | wc -l)
+    local remaining_resources=$($KUBECTL_CMD get all --no-headers 2>/dev/null | wc -l)
     
     if [[ $remaining_resources -eq 0 ]]; then
       echo -e "${GREEN}✓ All resources deleted successfully!${NC}"
@@ -140,7 +133,7 @@ wait_for_deletion() {
   done
   
   echo -e "${YELLOW}Deletion timeout reached. Remaining resources:${NC}"
-  $KUBECTL_CMD get all -n "$NAMESPACE" || true
+  $KUBECTL_CMD get all || true
   return 1
 }
 
@@ -150,12 +143,11 @@ echo " "
 echo "**********************"
 echo -e "${BLUE}=== Cleanup Summary ===${NC}"
 echo "**********************"
-echo -e "Namespace: ${BLUE}${NAMESPACE}${NC}"
 echo -e "Models deleted: ${BLUE}${#MODELS_TO_DELETE[@]}${NC}"
 
 echo " "
 echo -e "${BLUE}=== Remaining resources ===${NC}"
-$KUBECTL_CMD get all -n "$NAMESPACE" 2>/dev/null || echo -e "${GREEN}No resources found.${NC}"
+$KUBECTL_CMD get all 2>/dev/null || echo -e "${GREEN}No resources found.${NC}"
 
 echo " "
 echo "**********************"

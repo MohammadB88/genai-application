@@ -11,7 +11,6 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_INTERFACES_DIR="$SCRIPT_DIR/../web_interfaces"
-NAMESPACE="llms"
 
 if command -v oc >/dev/null 2>&1; then
   KUBECTL_CMD="oc"
@@ -73,12 +72,6 @@ fi
 echo -e "${GREEN}Selected web interface: $WEB_INTERFACE_PATH${NC}"
 echo "Web interface directory: $WEB_INTERFACE_DIR"
 
-# Ensure namespace exists
-echo " "
-echo -e "${BLUE}=== Creating namespace '${NAMESPACE}' if needed ===${NC}"
-$KUBECTL_CMD create namespace "$NAMESPACE" --dry-run=client -o yaml | $KUBECTL_CMD apply -f -
-echo -e "${GREEN}Namespace ready.${NC}"
-
 echo " "
 echo "**********************"
 read -r -p "Enter STORAGE_CLASS_NAME (leave blank for default cluster storage): " STORAGE_CLASS_NAME
@@ -110,7 +103,7 @@ echo "Web Interface: ${GREEN}${WEB_INTERFACE_PATH}${NC}"
 echo "**********************"
 echo "**********************"
 
-$KUBECTL_CMD apply -k "$WEB_INTERFACE_DIR" -n "$NAMESPACE"
+$KUBECTL_CMD apply -k "$WEB_INTERFACE_DIR"
 
 echo "**********************"
 echo -e "${BLUE}=== Waiting for Deployments to be ready (up to 5 minutes) ===${NC}"
@@ -122,7 +115,7 @@ wait_for_deployments_ready() {
   
   while [[ $attempt -le $max_attempts ]]; do
     # Get all deployments in the namespace
-    local deployments=$($KUBECTL_CMD get deployments -n "$NAMESPACE" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+    local deployments=$($KUBECTL_CMD get deployments -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$deployments" ]]; then
       echo -e "${YELLOW}[$attempt/$max_attempts] Waiting for deployments to appear...${NC}"
@@ -134,8 +127,8 @@ wait_for_deployments_ready() {
     # Check if all deployments are ready
     local all_ready=true
     for deployment in $deployments; do
-      local ready_replicas=$($KUBECTL_CMD get deployment "$deployment" -n "$NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-      local desired_replicas=$($KUBECTL_CMD get deployment "$deployment" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "1")
+      local ready_replicas=$($KUBECTL_CMD get deployment "$deployment" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+      local desired_replicas=$($KUBECTL_CMD get deployment "$deployment" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "1")
       
       if [[ "$ready_replicas" != "$desired_replicas" ]] || [[ "$ready_replicas" == "0" ]]; then
         all_ready=false
@@ -146,8 +139,8 @@ wait_for_deployments_ready() {
     if [[ "$all_ready" == true ]]; then
       echo -e "${GREEN}✓ All deployments are READY!${NC}"
       for deployment in $deployments; do
-        local ready_replicas=$($KUBECTL_CMD get deployment "$deployment" -n "$NAMESPACE" -o jsonpath='{.status.readyReplicas}')
-        local desired_replicas=$($KUBECTL_CMD get deployment "$deployment" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}')
+        local ready_replicas=$($KUBECTL_CMD get deployment "$deployment" -o jsonpath='{.status.readyReplicas}')
+        local desired_replicas=$($KUBECTL_CMD get deployment "$deployment" -o jsonpath='{.spec.replicas}')
         echo -e "${GREEN}  - $deployment: $ready_replicas/$desired_replicas replicas${NC}"
       done
       return 0
@@ -164,9 +157,9 @@ wait_for_deployments_ready() {
   # Timeout reached
   echo -e "${RED}✗ Deployments did not reach ready state within 5 minutes${NC}"
   echo -e "${YELLOW}Current status:${NC}"
-  $KUBECTL_CMD get deployments -n "$NAMESPACE" || true
+  $KUBECTL_CMD get deployments || true
   echo -e "${YELLOW}Pod status:${NC}"
-  $KUBECTL_CMD get pods -n "$NAMESPACE" || true
+  $KUBECTL_CMD get pods || true
   return 1
 }
 
@@ -176,18 +169,17 @@ echo " "
 echo "**********************"
 echo -e "${BLUE}=== Deployment Summary ===${NC}"
 echo "**********************"
-echo -e "Namespace: ${BLUE}${NAMESPACE}${NC}"
 echo -e "Web Interface: ${BLUE}${WEB_INTERFACE_PATH}${NC}"
 echo -e "Web Interface Directory: ${BLUE}${WEB_INTERFACE_DIR}${NC}"
 
 echo " "
 echo -e "${BLUE}=== Resources ===${NC}"
-$KUBECTL_CMD get all -n "$NAMESPACE" || true
+$KUBECTL_CMD get all || true
 
 if [[ "$KUBECTL_CMD" == "oc" ]]; then
   echo " "
   echo -e "${BLUE}=== Routes ===${NC}"
-  $KUBECTL_CMD get route -n "$NAMESPACE" || true
+  $KUBECTL_CMD get route || true
 fi
 
 echo "**********************"
