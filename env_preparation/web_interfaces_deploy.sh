@@ -110,7 +110,7 @@ echo -e "${BLUE}=== Waiting for Deployments to be ready (up to 5 minutes) ===${N
 echo "**********************"
 
 wait_for_deployments_ready() {
-  local max_attempts=150
+  local max_attempts=15
   local attempt=1
   
   while [[ $attempt -le $max_attempts ]]; do
@@ -119,7 +119,7 @@ wait_for_deployments_ready() {
     
     if [[ -z "$deployments" ]]; then
       echo -e "${YELLOW}[$attempt/$max_attempts] Waiting for deployments to appear...${NC}"
-      sleep 2
+      sleep 30
       ((attempt++))
       continue
     fi
