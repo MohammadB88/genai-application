@@ -16,9 +16,15 @@ oc delete project litemaas
 echo "Deleting OAuthClient litemaas..."
 oc delete oauthclient litemaas
 
-# # Step 4: Remove the cloned repository
-# echo "Removing cloned repository..."
-# rm -rf litemaas/
+
+# Step 4: Optionally remove the cloned repository
+read -r -p "Delete the cloned repo 'litemaas'? [y/N]: " DELETE_REPO_ANSWER
+if [[ "$DELETE_REPO_ANSWER" =~ ^([yY]|[yY][eE][sS])$ ]]; then
+  echo "Removing cloned repository..."
+  rm -rf litemaas/
+else
+  echo "Skipping cloned repository removal."
+fi
 
 # Step 5: Remove the generated values file
 echo "Removing generated values file..."

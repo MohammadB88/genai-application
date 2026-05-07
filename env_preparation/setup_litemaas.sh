@@ -61,6 +61,6 @@ echo "Creating namespace litemaas..."
 oc new-project litemaas
 
 echo "Installing LiteMaaS using Helm..."
-helm install litemaas deployment/helm/litemaas/ -n litemaas -f values_final.yaml
+helm install litemaas litemaas/deployment/helm/litemaas/ -n litemaas -f values_final.yaml
 
 echo "Script completed."
