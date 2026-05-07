@@ -15,4 +15,4 @@ spec:
     targetPort: service
   tls:
     termination: edge
-  wildcardPolicy: None
+    insecureEdgeTerminationPolicy: Redirect
