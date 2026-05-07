@@ -6,10 +6,8 @@ namespace: llms-vllm
 
 resources:
   - deployment.yaml
-  - pvc.yaml
   - service.yaml
-
-  # - route.yaml
-
   - servicemonitor.yaml
-
+  - pvc.yaml
+  
+  # - route.yaml
