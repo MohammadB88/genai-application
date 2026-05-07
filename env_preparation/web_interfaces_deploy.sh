@@ -106,11 +106,11 @@ echo "**********************"
 $KUBECTL_CMD apply -k "$WEB_INTERFACE_DIR"
 
 echo "**********************"
-echo -e "${BLUE}=== Waiting for Deployments to be ready (up to 5 minutes) ===${NC}"
+echo -e "${BLUE}=== Waiting for Deployments to be ready (up to 6 minutes) ===${NC}"
 echo "**********************"
 
 wait_for_deployments_ready() {
-  local max_attempts=15
+  local max_attempts=18
   local attempt=1
   
   while [[ $attempt -le $max_attempts ]]; do
@@ -155,7 +155,7 @@ wait_for_deployments_ready() {
   done
   
   # Timeout reached
-  echo -e "${RED}✗ Deployments did not reach ready state within 5 minutes${NC}"
+  echo -e "${RED}✗ Deployments did not reach ready state within 6 minutes${NC}"
   echo -e "${YELLOW}Current status:${NC}"
   $KUBECTL_CMD get deployments || true
   echo -e "${YELLOW}Pod status:${NC}"
