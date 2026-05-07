@@ -28,7 +28,6 @@ echo "This script will help you deploy the root Argo CD application for the GenA
 
 echo " "
 echo "**********************"
-echo "**********************"
 echo -e "${BLUE}=== Secret setup option ===${NC}"
 read -r -p "Create secrets in namespace 'llms'? [y/N]: " CREATE_SECRET_ANSWER
 if [[ "$CREATE_SECRET_ANSWER" =~ ^([yY]|[yY][eE][sS])$ ]]; then
