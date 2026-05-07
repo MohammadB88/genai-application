@@ -10,5 +10,6 @@ spec:
   resources:
     requests:
       storage: 20Gi   # Granite 3.1 8B bf16 ≈ 16 GiB unpacked;
-  storageClassName: ocs-storagecluster-ceph-rbd
+  # storageClassName: ocs-storagecluster-ceph-rbd
+  storageClassName: ocs-external-storagecluster-ceph-rbd
   # storageClassName: placeholder-storageclass # leave headroom
