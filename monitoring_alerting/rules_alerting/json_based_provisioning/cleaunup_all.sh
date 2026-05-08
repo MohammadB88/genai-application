@@ -77,8 +77,8 @@ if [[ "$DELETE_RULES" == true ]]; then
     echo ""
 
     while IFS=$'\t' read -r uid title; do
-      read -rp "Delete rule '$title' [$uid]? (yes/no): " CONFIRM
-      if [[ "$CONFIRM" == "yes" ]]; then
+      read -rp "Delete rule '$title' [$uid]? (yes/no): " CONFIRM < /dev/tty
+      if [[ "${CONFIRM,,}" =~ ^(yes|y)$ ]]; then
         curl -X DELETE "${GRAFANA_URL}/api/v1/provisioning/alert-rules/${uid}" \
           -H "${AUTH_HEADER}"
         echo "Deleted: $title [$uid]"
