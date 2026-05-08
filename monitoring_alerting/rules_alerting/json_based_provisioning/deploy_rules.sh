@@ -29,6 +29,9 @@ deploy() {
   source "$env_file"
   set +a
 
+  # Escape any inner double quotes in ALERT_EXPR so they are valid JSON
+  ALERT_EXPR="${ALERT_EXPR//\"/\\\"}"
+
   # Only substitute known variables — prevents envsubst from eating
   # Prometheus label selectors like {namespace="gpu-operator"}
   VARS=$(env | grep -E '^(ALERT_|DATASOURCE_|GRAFANA_|THRESHOLD_|ORGID)' \
