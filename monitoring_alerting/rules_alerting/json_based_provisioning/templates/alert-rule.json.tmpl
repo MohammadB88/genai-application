@@ -1,0 +1,55 @@
+{
+  "title": "${ALERT_TITLE}",
+  "orgID": 1,
+  "folderUID": "${GRAFANA_FOLDER_UID}",
+  "ruleGroup": "${ALERT_GROUP}",
+  "for": "${ALERT_FOR}",
+  "condition": "C",
+  "labels": {
+    "severity": "${ALERT_SEVERITY}"
+  },
+  "annotations": {
+    "summary": "${ALERT_SUMMARY}",
+    "description": "${ALERT_DESCRIPTION}"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "relativeTimeRange": { "from": 600, "to": 0 },
+      "datasourceUid": "${DATASOURCE_UID}",
+      "model": {
+        "expr": "${ALERT_EXPR}",
+        "refId": "A"
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "__expr__",
+      "relativeTimeRange": { "from": 0, "to": 0 },
+      "datasourceUid": "-100",
+      "model": {
+        "type": "reduce",
+        "refId": "B",
+        "reducer": "last",
+        "expression": "A"
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "__expr__",
+      "relativeTimeRange": { "from": 0, "to": 0 },
+      "datasourceUid": "-100",
+      "model": {
+        "type": "threshold",
+        "refId": "C",
+        "conditions": [{
+          "evaluator": { "type": "${THRESHOLD_OP}", "params": [${THRESHOLD_VALUE}] },
+          "query": { "params": ["B"] },
+          "reducer": { "type": "last" },
+          "operator": { "type": "and" }
+        }],
+        "expression": "B"
+      }
+    }
+  ]
+}
