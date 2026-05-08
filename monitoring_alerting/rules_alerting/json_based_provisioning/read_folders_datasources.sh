@@ -8,6 +8,24 @@ echo
 
 AUTH_HEADER="Authorization: Bearer ${GRAFANA_TOKEN}"
 
+
+# **********************
+# Organisation ID
+# **********************
+echo ""
+echo "Current Organisation:"
+echo "**********************"
+ 
+curl -sf -X GET "${GRAFANA_URL}/api/org" \
+  -H "Content-Type: application/json" \
+  -H "${AUTH_HEADER}" | python3 -c "
+import sys, json
+org = json.load(sys.stdin)
+print(f'  {\"Name\":<40} ID')
+print(f'  {\"-\"*40} {\"-\"*10}')
+print(f'  {org[\"name\"]:<40} {org[\"id\"]}')
+"
+
 # **********************
 # Folders
 # **********************
