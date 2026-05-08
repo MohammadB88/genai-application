@@ -4,11 +4,12 @@
   "folderUID": "${GRAFANA_FOLDER_UID}",
   "ruleGroup": "${ALERT_GROUP}",
   "for": "${ALERT_FOR}",
+  "condition": "C",
   "noDataState": "NoData",
   "execErrState": "Error",
-  "condition": "C",
   "labels": {
-    "severity": "${ALERT_SEVERITY}"
+    "severity": "${ALERT_SEVERITY}",
+    "team": "${ALERT_TEAM}"
   },
   "annotations": {
     "summary": "${ALERT_SUMMARY}",

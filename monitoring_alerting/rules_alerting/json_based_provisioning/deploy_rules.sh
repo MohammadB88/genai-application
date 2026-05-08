@@ -47,7 +47,7 @@ deploy() {
 
   # Validate JSON before sending
   echo "$RENDERED" | python3 -m json.tool > /dev/null || {
-    echo "❌ Invalid JSON for '$ALERT_TITLE' — aborting"
+    echo "Invalid JSON for '$ALERT_TITLE' — aborting"
     exit 1
   }
 
@@ -56,7 +56,7 @@ deploy() {
     -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
     -d @-
 
-  echo "✅ Deployed: $ALERT_TITLE"
+  echo "Deployed: $ALERT_TITLE"
 }
 
 if [[ "$RULE_ENV" == "--all" ]]; then
