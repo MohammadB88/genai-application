@@ -39,28 +39,49 @@ deploy() {
 
   RENDERED=$(envsubst "$VARS" < templates/alert-rule.json.tmpl)
 
-  echo "**********************************"
+  echo ""
+  echo "****************************"
   echo "Rendered JSON for: $ALERT_TITLE"
-  echo "**********************************"
+  echo "****************************"
   echo "$RENDERED"
-  echo "**********************************"
+  echo "****************************"
 
   # Validate JSON before sending
   echo "$RENDERED" | python3 -m json.tool > /dev/null || {
-    echo "Invalid JSON for '$ALERT_TITLE' — aborting"
+    echo "[ERROR] Invalid JSON for '$ALERT_TITLE' — aborting"
     exit 1
   }
 
-  echo "$RENDERED" | curl -X POST "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
+   # Check if rule already exists by title using jq
+  echo "Checking if rule already exists..."
+  EXISTING=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
-    -d @-
-
-  echo "Deployed: $ALERT_TITLE"
+    -H "Authorization: Bearer ${GRAFANA_TOKEN}" | \
+    grep -o '"uid":"[^"]*".*"title":"'"$ALERT_TITLE"'"' | \
+    grep -o '"uid":"[^"]*"' | cut -d'"' -f4 | head -1) || true
+ 
+  if [[ -n "$EXISTING" ]]; then
+    # Update existing rule
+    echo "Rule exists with UID: $EXISTING"
+    echo "Updating rule..."
+    echo "$RENDERED" | curl -sf -X PUT "${GRAFANA_URL}/api/v1/provisioning/alert-rules/${EXISTING}" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
+      -d @-
+    echo "[OK] Updated: $ALERT_TITLE"
+  else
+    # Create new rule
+    echo "Rule does not exist. Creating..."
+    echo "$RENDERED" | curl -sf -X POST "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
+      -d @-
+    echo "[OK] Created: $ALERT_TITLE"
+  fi
 }
-
+ 
 if [[ "$RULE_ENV" == "--all" ]]; then
-  for env_file in rules/*.env; do
+  for env_file in rules/nim-tensortllm/*.env; do
     deploy "$env_file"
   done
 else

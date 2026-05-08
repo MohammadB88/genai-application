@@ -13,3 +13,16 @@
 ./cleanup.sh --rules     # Delete all alert rules only
 ./cleanup.sh --policy    # Reset notification policy only
 ./cleanup.sh --all       # Both
+
+
+# Number or rules for each topic
+under rules/gpu
+GPU cluster health (5 rules)
+GPU critical & warning conditions (10 rules)
+GPU cost efficiency (5 rules)
+
+under rules/nim-vllm
+NIM vLLM models (8 rules)
+
+under rules/nim-tensorrtllm
+NIM embedding/TensorRT-LLM (5 rules)
