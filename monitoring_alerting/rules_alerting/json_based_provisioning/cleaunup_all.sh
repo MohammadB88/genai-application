@@ -48,6 +48,7 @@ if [[ $# -gt 0 ]]; then
   done
 fi
 
+
 # **********************************
 # Delete Alert Rules
 # **********************************
@@ -55,42 +56,37 @@ if [[ "$DELETE_RULES" == true ]]; then
   echo ""
   echo "Fetching all alert rules..."
 
-  RULES=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
+  RULES=$(curl -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
     -H "Content-Type: application/json" \
     -H "${AUTH_HEADER}")
 
-  UIDS=$(echo "$RULES" | python3 -c "
-import sys, json
-rules = json.load(sys.stdin)
-for r in rules:
-    print(r['uid'] + ' ' + r['title'])
-")
+  UIDS=$(echo "$RULES" | jq -r '.[] | "\(.uid) \(.title)"')
 
   if [[ -z "$UIDS" ]]; then
     echo "No alert rules found."
   else
     echo ""
-    echo "The following rules will be deleted:"
+    echo "The following rules were found:"
     echo "----------------------------------------------"
     echo "$UIDS" | while read -r uid title; do
       echo "  [$uid] $title"
     done
     echo "----------------------------------------------"
     echo ""
-    read -rp "Confirm deletion? (yes/no): " CONFIRM
-    if [[ "$CONFIRM" != "yes" ]]; then
-      echo "Aborted."
-      exit 0
-    fi
 
     echo "$UIDS" | while read -r uid title; do
-      curl -sf -X DELETE "${GRAFANA_URL}/api/v1/provisioning/alert-rules/${uid}" \
-        -H "${AUTH_HEADER}"
-      echo "Deleted: $title [$uid]"
+      read -rp "Delete rule '$title' [$uid]? (yes/no): " CONFIRM
+      if [[ "$CONFIRM" == "yes" ]]; then
+        curl -X DELETE "${GRAFANA_URL}/api/v1/provisioning/alert-rules/${uid}" \
+          -H "${AUTH_HEADER}"
+        echo "Deleted: $title [$uid]"
+      else
+        echo "Skipped: $title [$uid]"
+      fi
     done
 
     echo ""
-    echo "All alert rules deleted."
+    echo "Alert rules processing complete."
   fi
 fi
 
@@ -101,7 +97,7 @@ if [[ "$DELETE_POLICY" == true ]]; then
   echo ""
   echo "Resetting notification policy to Grafana default..."
 
-  curl -sf -X DELETE "${GRAFANA_URL}/api/v1/provisioning/policies" \
+  curl -X DELETE "${GRAFANA_URL}/api/v1/provisioning/policies" \
     -H "${AUTH_HEADER}"
 
   echo "Notification policy reset to default."
