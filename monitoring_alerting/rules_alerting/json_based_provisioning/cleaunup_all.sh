@@ -60,7 +60,7 @@ if [[ "$DELETE_RULES" == true ]]; then
     -H "Content-Type: application/json" \
     -H "${AUTH_HEADER}")
 
-  UIDS=$(echo "$RULES" | jq -r '.[] | "\(.uid) \(.title)"')
+  UIDS=$(echo "$RULES" | jq -r '.[] | "\(.uid)\t\(.title)"')
 
   if [[ -z "$UIDS" ]]; then
     echo "No alert rules found."
@@ -68,13 +68,15 @@ if [[ "$DELETE_RULES" == true ]]; then
     echo ""
     echo "The following rules were found:"
     echo "----------------------------------------------"
-    echo "$UIDS" | while read -r uid title; do
+    while IFS=$'\t' read -r uid title; do
       echo "  [$uid] $title"
-    done
+    # Feed the contents of the UIDS variable into the loop via a here-string,
+    # allowing the while/read loop to process each line from UIDS before ending.
+    done <<< "$UIDS"
     echo "----------------------------------------------"
     echo ""
 
-    echo "$UIDS" | while read -r uid title; do
+    while IFS=$'\t' read -r uid title; do
       read -rp "Delete rule '$title' [$uid]? (yes/no): " CONFIRM
       if [[ "$CONFIRM" == "yes" ]]; then
         curl -X DELETE "${GRAFANA_URL}/api/v1/provisioning/alert-rules/${uid}" \
@@ -83,7 +85,7 @@ if [[ "$DELETE_RULES" == true ]]; then
       else
         echo "Skipped: $title [$uid]"
       fi
-    done
+    done <<< "$UIDS"
 
     echo ""
     echo "Alert rules processing complete."
