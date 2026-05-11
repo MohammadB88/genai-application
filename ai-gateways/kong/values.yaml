@@ -1,0 +1,87 @@
+# Default values for kong-gateway
+replicaCount: 1
+
+image:
+  repository: kong/kong-gateway
+  pullPolicy: IfNotPresent
+  tag: "3.9"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+    - ALL
+
+service:
+  type: ClusterIP
+  ports:
+    - name: proxy
+      port: 80
+      targetPort: proxy
+    - name: proxy-tls
+      port: 443
+      targetPort: proxy-tls
+    - name: admin
+      port: 8001
+      targetPort: admin
+    - name: admin-tls
+      port: 8444
+      targetPort: admin-tls
+    - name: status
+      port: 8100
+      targetPort: status
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Kong specific configuration
+env:
+  database: "off"
+
+# Plugins to enable
+plugins:
+  - ai-proxy
+  - ai-proxy-advanced
+  - prometheus
+
+# AI Proxy configuration for Ollama
+aiProxy:
+  enabled: true
+  config:
+    route_type: llm/v1/chat
+    model:
+      provider: ollama
+      name: llama3.2:3b
+      options:
+        upstream_url: http://ollama.llms.svc.cluster.local:11434
+
+# Prometheus plugin
+prometheus:
+  enabled: true
