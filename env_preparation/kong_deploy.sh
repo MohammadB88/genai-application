@@ -6,7 +6,7 @@ NAMESPACE="${1:-kong}"
 RELEASE_NAME="${2:-kong}"
 
 echo "##############################################################"
-echo "Deploying Kong AI Gateway to namespace: ${NAMESPACE}"
+echo "Deploying Kong Gateway (Official Chart) to namespace: ${NAMESPACE}"
 echo "Release name: ${RELEASE_NAME}"
 echo "##############################################################"
 
@@ -19,29 +19,24 @@ else
   echo "Namespace ${NAMESPACE} already exists."
 fi
 
-# Add Kong Helm repository if not present
-echo "Checking for Kong Helm repository..."
-if ! helm repo list | grep -q "kong"; then
-  echo "Adding Kong Helm repository..."
-  helm repo add kong https://charts.konghq.com
-  helm repo update
-else
-  echo "Kong Helm repository already exists."
-  helm repo update
-fi
+# Add Kong Helm repository
+echo "Adding Kong Helm repository..."
+helm repo add kong https://charts.konghq.com
+helm repo update
 
-# Deploy Kong using Helm chart
-echo "Deploying Kong AI Gateway..."
-helm upgrade --install "${RELEASE_NAME}" ./ai-gateways/kong \
+# Deploy Kong using Official Helm chart with our custom values
+echo "Deploying Kong Gateway (Official Chart)..."
+helm upgrade --install "${RELEASE_NAME}" kong/kong \
   --namespace "${NAMESPACE}" \
   -f ai-gateways/kong/values.yaml \
   -f ai-gateways/kong/values-openshift.yaml \
   --wait --timeout 5m
 
 echo "##############################################################"
-echo "Kong AI Gateway deployed successfully!"
+echo "Kong Gateway deployed successfully!"
 echo "Namespace: ${NAMESPACE}"
 echo "Release: ${RELEASE_NAME}"
+echo "Chart: kong/kong (Official)"
 echo "##############################################################"
 
 echo "To access Kong Admin API:"

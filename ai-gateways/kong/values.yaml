@@ -1,4 +1,4 @@
-# Default values for kong-gateway
+# Default values for kong-gateway (clean installation)
 replicaCount: 1
 
 image:
@@ -51,11 +51,11 @@ service:
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: "1"
+    memory: "1Gi"
   requests:
-    cpu: 200m
-    memory: 256Mi
+    cpu: "500m"
+    memory: "512Mi"
 
 nodeSelector: {}
 tolerations: []
@@ -65,22 +65,9 @@ affinity: {}
 env:
   database: "off"
 
-# Plugins to enable
+# Plugins to enable (basic Kong without extra plugins)
 plugins:
-  - ai-proxy
-  - ai-proxy-advanced
   - prometheus
-
-# AI Proxy configuration for Ollama
-aiProxy:
-  enabled: true
-  config:
-    route_type: llm/v1/chat
-    model:
-      provider: ollama
-      name: llama3.2:3b
-      options:
-        upstream_url: http://ollama.llms.svc.cluster.local:11434
 
 # Prometheus plugin
 prometheus:

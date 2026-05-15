@@ -1,21 +1,20 @@
-# Kong AI Gateway Deployment Guide
+# Kong AI Gateway Deployment Guide (Using Official Helm Chart)
 
-This directory contains Helm chart files for deploying Kong AI Gateway on OpenShift/Kubernetes. Kong AI Gateway provides advanced AI capabilities including prompt engineering, semantic caching, comprehensive observability, and enterprise-grade traffic management.
+This directory contains configuration files for deploying the official Kong AI Gateway Helm chart on OpenShift/Kubernetes. 
+We use the official Kong chart (`kong/kong`) with custom values files to tailor the deployment to our environment.
 
 ## Directory Structure
 
 ```
 ai-gateways/kong/
-├── Chart.yaml              # Helm chart definition
-├── values.yaml             # Default configuration values
+├── Chart.yaml              # [DEPRECATED] Local chart definition (no longer used)
+├── values.yaml             # Custom configuration values for the official Kong chart
 ├── values-openshift.yaml   # OpenShift-specific configuration overrides
-├── templates/              # Kubernetes manifest templates
-│   ├── deployment.yaml     # Kong Gateway deployment
-│   ├── service.yaml        # Kong Gateway service
-│   ├── route.yaml          # OpenShift route for external access
-│   └── servicemonitor.yaml # Prometheus ServiceMonitor for metrics collection
-└── test-connectivity.sh    # Script to verify deployment
+├── test-connectivity.sh    # Script to verify deployment
+└── README.md               # This file
 ```
+
+> **Note**: The local `Chart.yaml` and `templates/` directory have been removed. We now use the official Kong Helm chart from `https://charts.konghq.com`.
 
 ## Prerequisites
 
@@ -27,9 +26,7 @@ ai-gateways/kong/
 
 ## Deployment Instructions
 
-### Step 1: Add Kong Helm Repository (if needed)
-
-The chart is designed to work as a local chart, but if you prefer to use Kong's official repository:
+### Step 1: Add Kong Helm Repository
 
 ```bash
 helm repo add kong https://charts.konghq.com
@@ -48,16 +45,9 @@ kubectl create namespace kong
 
 ### Step 3: Deploy Kong AI Gateway
 
-Deploy using the provided values files, with OpenShift-specific overrides:
+Deploy using the official Kong chart with our custom values files:
 
 ```bash
-# Using Helm with local chart
-helm install kong ./ai-gateways/kong \
-  --namespace kong \
-  -f ai-gateways/kong/values.yaml \
-  -f ai-gateways/kong/values-openshift.yaml
-
-# OR using Kong's official repository (if added)
 helm install kong kong/kong \
   --namespace kong \
   -f ai-gateways/kong/values.yaml \
@@ -93,27 +83,23 @@ chmod +x ai-gateways/kong/test-connectivity.sh
 
 ## Configuration
 
-### Default Values (`values.yaml`)
-Contains standard Kong configuration including:
+### Custom Values (`values.yaml`)
+Contains our custom configuration for the official Kong chart, including:
 - Image version and repository
 - Resource requests/limits
-- Plugin configurations
-- Admin API settings
-- Proxy configuration
+- Enabled plugins (currently only prometheus)
+- Kong environment variables (database: "off")
 
 ### OpenShift Overrides (`values-openshift.yaml`)
 Contains OpenShift-specific adjustments:
+- Service type set to ClusterIP
 - SecurityContext configurations for OpenShift restrictions
-- ServiceAccount setup
-- Route-specific configurations
-- OpenShift-compatible readiness/liveness probes
 
 ### Custom Configuration
-To customize your deployment, create a custom values file:
+To further customize your deployment, create a custom values file:
 
 ```bash
-# Create custom-values.yaml with your overrides
-helm install kong ./ai-gateways/kong \
+helm install kong kong/kong \
   --namespace kong \
   -f ai-gateways/kong/values.yaml \
   -f ai-gateways/kong/values-openshift.yaml \
@@ -143,11 +129,9 @@ https://<kong-route-host>/metrics
 ## Features Enabled
 
 This deployment includes:
-- **AI Gateway Plugins**: Prompt engineering, semantic caching, request/response transformation
-- **Observability**: Built-in Prometheus metrics via ServiceMonitor
+- **Prometheus Plugin**: For metrics collection
 - **OpenShift Integration**: Secure routes, proper security contexts
-- **High Availability**: Configurable replica counts
-- **Extensibility**: Easy to add additional plugins via values.yaml
+- **High Availability**: Configurable replica counts (default: 1)
 
 ## Troubleshooting
 
@@ -162,12 +146,12 @@ This deployment includes:
 
 ```bash
 # View Kong pod logs
-oc logs -f deployment/kong -n kong
+oc logs -f deployment/<release-name>-kong -n kong
 
 # Describe problematic resources
 oc describe pod <pod-name> -n kong
-oc describe service kong-proxy -n kong
-oc describe route kong-proxy -n kong
+oc describe service <release-name>-kong-proxy -n kong
+oc describe route <release-name>-kong-proxy -n kong
 ```
 
 ## Upgrading
@@ -175,7 +159,7 @@ oc describe route kong-proxy -n kong
 To upgrade your Kong deployment:
 
 ```bash
-helm upgrade kong ./ai-gateways/kong \
+helm upgrade kong kong/kong \
   --namespace kong \
   -f ai-gateways/kong/values.yaml \
   -f ai-gateways/kong/values-openshift.yaml
@@ -194,6 +178,5 @@ oc delete project kong
 ## References
 
 - [Kong Documentation](https://docs.konghq.com/gateway/latest/)
-- [Kong Helm Chart](https://github.com/Kong/charts/tree/main/charts/kong)
-- [Kong AI Gateway Documentation](https://docs.konghq.com/gateway/latest/ai-gateway/)
+- [Kong Helm Chart](https://artifacthub.io/packages/helm/kong/kong)
 - [OpenShift Security Context Constraints](https://docs.openshift.com/container-platform/4.14/authentication/managing-security-context-constraints.html)
