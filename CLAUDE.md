@@ -422,13 +422,29 @@ kubectl create configmap k6-test-script --from-file=test.js
 kubectl apply -f testrun.yaml
 ```
 
-## API Gateway (LiteLLM)
+## API Gateways
 
+The `ai-gateways/` directory contains configurations for deploying API gateways for accessing multiple LLM providers.
+
+### LiteLLM Gateway
 The `ai-gateways/litemaas/` directory contains configurations for deploying LiteLLM as a unified API gateway for accessing multiple LLM providers.
 
-### Components
+#### Components
 - `oauthclient.yaml`: OAuth client configuration
 - `values_oc.yaml`: OpenShift-specific values for LiteLLM deployment
+
+### Kong AI Gateway
+The `ai-gateways/kong/` directory contains configurations for deploying Kong AI Gateway as an alternative API gateway with advanced AI capabilities including prompt engineering, semantic caching, and comprehensive observability.
+
+#### Components
+- `Chart.yaml`: Helm chart definition
+- `values.yaml`: Default configuration values
+- `values-openshift.yaml`: OpenShift-specific configuration overrides
+- `templates/`: Kubernetes manifest templates
+  - `deployment.yaml`: Kong Gateway deployment
+  - `service.yaml`: Kong Gateway service
+  - `route.yaml`: OpenShift route for external access
+  - `servicemonitor.yaml`: Prometheus ServiceMonitor for metrics collection
 
 ## Infrastructure Automation
 
