@@ -32,6 +32,15 @@ helm upgrade --install "${RELEASE_NAME}" kong/kong \
   -f ai-gateways/kong/values-openshift.yaml \
   --wait --timeout 5m
 
+# Update SCC policy for Kong service account
+echo "Updating SCC policy for Kong service account..."
+oc adm policy add-scc-to-user anyuid -z kong -n "${NAMESPACE}"
+oc adm policy add-scc-to-user nonroot-v2 -z kong -n "${NAMESPACE}"
+
+# Create route for kong-services
+echo "Creating route for kong-services..."
+oc create route edge kong-services --service=kong-proxy -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+
 echo "##############################################################"
 echo "Kong Gateway deployed successfully!"
 echo "Namespace: ${NAMESPACE}"
