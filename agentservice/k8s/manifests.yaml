@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agents
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: system-health-agent
+  namespace: agents
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: system-health-agent
+  template:
+    metadata:
+      labels:
+        app: system-health-agent
+    spec:
+      containers:
+      - name: agent
+        image: genai-agent-service:latest # Placeholder for CI build
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MODEL_URL
+          value: "http://vllm-service.llms.svc.cluster.local/v1"
+        - name: MODEL_API_KEY
+          value: "no-key"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: system-health-agent
+  namespace: agents
+spec:
+  selector:
+    app: system-health-agent
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: system-health-agent
+  namespace: agents
+spec:
+  to:
+    kind: Service
+      name: system-health-agent
+  port:
+    https:
+      path: /
