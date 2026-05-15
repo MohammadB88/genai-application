@@ -103,10 +103,22 @@ genai-application/
 │       ├── kustomization.yaml
 │       └── pvc.yaml
 ├── ai-gateways/                 # API gateway configurations
-│   └── litemaas/                # LiteLLM gateway
+│   ├── litemaas/                # LiteLLM gateway
+│   │   ├── README.md
+│   │   ├── oauthclient.yaml
+│   │   └── values_oc.yaml
+│   └── kong/                    # Kong AI Gateway
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       ├── values-openshift.yaml
 │       ├── README.md
-│       ├── oauthclient.yaml
-│       └── values_oc.yaml
+│       ├── test-connectivity.sh
+│       └── templates/            # Kubernetes manifest templates
+│           ├── deployment.yaml
+│           ├── service.yaml
+│           ├── route.yaml
+│           └── servicemonitor.yaml
+
 ├── monitoring_alerting/         # Monitoring and alerting
 │   ├── grafana_openshift/       # Grafana dashboards
 │   │   ├── Readme.md
