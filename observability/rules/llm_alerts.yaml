@@ -1,0 +1,29 @@
+groups:
+- name: LLM_Service_Level_Objectives
+  rules:
+  - alert: HighP99Latency
+    expr: histogram_quantile(0.99, sum by (le, model) (rate(vllm:request_duration_seconds_bucket[5m]))) > 3
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High P99 Latency detected"
+      description: "LLM P99 latency is above 3 seconds for more than 5 minutes."
+
+  - alert: KVCacheCritical
+    expr: gpu_cache_usage_perc > 90
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "KV Cache nearly full"
+      description: "KV cache utilization is above 90%, risking request drops."
+
+  - alert: LLMErrorRateHigh
+    expr: rate(vllm:request_errors_total[5m]) / rate(vllm:request_count_total[5m]) > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High LLM error rate"
+      description: "More than 5% of requests are failing."

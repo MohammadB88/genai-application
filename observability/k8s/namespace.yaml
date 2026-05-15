@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  llm_metrics.json: |
+    # (Insert contents of observability/grafana/llm_metrics.json here)
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-rules-loader
+  namespace: observability

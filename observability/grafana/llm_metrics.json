@@ -1,0 +1,27 @@
+{
+  "title": "LLM Performance Overview",
+  "description": "Visualization of vLLM and NIM metrics including Latency, Throughput and KV Cache",
+  "panels": [
+    {
+      "title": "Request Latency (P99)",
+      "type": "graph",
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le, model) (rate(vllm:request_duration_seconds_bucket[5m])))" }
+      ]
+    },
+    {
+      "title": "Total Throughput (Tokens/sec)",
+      "type": "graph",
+      "targets": [
+        { "expr": "sum(rate(vllm:generation_tokens_total[5m]))" }
+      ]
+    },
+    {
+      "title": "KV Cache Usage (%)",
+      "type": "gauge",
+      "targets": [
+        { "expr": "gpu_cache_usage_perc" }
+      ]
+    }
+  ]
+}
