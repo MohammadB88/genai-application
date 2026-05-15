@@ -1,4 +1,4 @@
-# Default values for kong-gateway (clean installation)
+# Default values for kong-gateway (clean installation using official chart)
 replicaCount: 1
 
 image:
@@ -64,11 +64,4 @@ affinity: {}
 # Kong specific configuration
 env:
   database: "off"
-
-# Plugins to enable (basic Kong without extra plugins)
-plugins:
-  - prometheus
-
-# Prometheus plugin
-prometheus:
-  enabled: true
+  KONG_PLUGINS: prometheus

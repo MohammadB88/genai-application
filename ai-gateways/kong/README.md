@@ -7,14 +7,13 @@ We use the official Kong chart (`kong/kong`) with custom values files to tailor 
 
 ```
 ai-gateways/kong/
-├── Chart.yaml              # [DEPRECATED] Local chart definition (no longer used)
 ├── values.yaml             # Custom configuration values for the official Kong chart
 ├── values-openshift.yaml   # OpenShift-specific configuration overrides
 ├── test-connectivity.sh    # Script to verify deployment
 └── README.md               # This file
 ```
 
-> **Note**: The local `Chart.yaml` and `templates/` directory have been removed. We now use the official Kong Helm chart from `https://charts.konghq.com`.
+> **Note**: We use the official Kong Helm chart from `https://charts.konghq.com`. The local Chart.yaml and templates have been removed.
 
 ## Prerequisites
 
@@ -88,7 +87,7 @@ Contains our custom configuration for the official Kong chart, including:
 - Image version and repository
 - Resource requests/limits
 - Enabled plugins (currently only prometheus)
-- Kong environment variables (database: "off")
+- Kong environment variables (database: "off", KONG_PLUGINS: prometheus)
 
 ### OpenShift Overrides (`values-openshift.yaml`)
 Contains OpenShift-specific adjustments:
