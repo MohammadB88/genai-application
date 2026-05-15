@@ -13,20 +13,16 @@ fullnameOverride: ""
 serviceAccount:
   create: true
   annotations: {}
-  name: ""
+  name: "kong"
 
 podAnnotations: {}
 podLabels: {}
 
 podSecurityContext:
   runAsNonRoot: true
-  # runAsUser: 1001010000
-  # runAsGroup: 1001010000
-  # fsGroup: 1001010000
 
 containerSecurityContext:
   runAsNonRoot: true
-  # runAsUser: 1001010000
   capabilities:
     drop:
     - ALL
@@ -64,7 +60,25 @@ affinity: {}
 
 # Kong specific configuration
 env:
-  database: "off"
+  # Existing DB & listener settings...
+  database: "off"  # or "postgres"
+
+  admin_listen: "0.0.0.0:8444 http2 ssl"
+  admin_gui_listen: "0.0.0.0:8443 http2 ssl"
+  admin_api_listen: "0.0.0.0:8443 http2 ssl"
+
+  # Replace with YOUR actual hostnames (no trailing slashes)
+  admin_api_uri: "https://kong-admin.{CLUSTER_URL}}"
+  admin_gui_url: "https://kong-manager.{CLUSTER_URL}}"
+
+  # Session config: cookie_domain must be shared by both hostnames
+  # If both are subdomains of mycluster.example.com, use that:
+  # admin_gui_session_conf: >-
+  #   {
+  #     "cookie_domain": "mycluster.example.com",
+  #     "secret": "a-very-long-random-secret-generate-with-openssl-or-pwd",
+  #     "cookie_secure": true
+  #   }
   # KONG_PLUGINS: prometheus
 
 # # Prometheus plugin configuration (if needed, otherwise defaults are used)

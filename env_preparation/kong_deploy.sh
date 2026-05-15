@@ -10,6 +10,16 @@ echo "Deploying Kong Gateway (Official Chart) to namespace: ${NAMESPACE}"
 echo "Release name: ${RELEASE_NAME}"
 echo "##############################################################"
 
+# Ask for CLUSTER_URL
+read -p "Enter the CLUSTER_URL (e.g., cluster.example.com): " CLUSTER_URL
+if [ -z "${CLUSTER_URL}" ]; then
+  echo "Error: CLUSTER_URL is required."
+  exit 1
+fi
+
+# Replace {CLUSTER_URL}} in values.yaml with the provided value
+sed -i "s/{CLUSTER_URL}}/ ${CLUSTER_URL}/g" ai-gateways/kong/values.yaml
+
 # Create namespace if it doesn't exist
 echo "Checking if namespace ${NAMESPACE} exists..."
 if ! kubectl get namespace "${NAMESPACE}" >/dev/null 2>&1; then
@@ -37,9 +47,12 @@ echo "Updating SCC policy for Kong service account..."
 oc adm policy add-scc-to-user anyuid -z kong -n "${NAMESPACE}"
 oc adm policy add-scc-to-user nonroot-v2 -z kong -n "${NAMESPACE}"
 
-# Create route for kong-services
-echo "Creating route for kong-services..."
-oc create route edge kong-services --service=kong-proxy -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+# Create routes
+echo "Creating routes..."
+# Route for Kong Manager
+oc create route edge kong-manager --service=kong-kong-manager -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+# Route for Kong Admin
+oc create route edge kong-admin --service=kong-kong-admin -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
 
 echo "##############################################################"
 echo "Kong Gateway deployed successfully!"
@@ -48,11 +61,11 @@ echo "Release: ${RELEASE_NAME}"
 echo "Chart: kong/kong (Official)"
 echo "##############################################################"
 
-echo "To access Kong Admin API:"
-echo "  http://\$(oc get route -n ${NAMESPACE} ${RELEASE_NAME}-kong-admin -o jsonpath='{.spec.host}')"
+echo "To access Kong Manager:"
+echo "  http://\$(oc get route -n ${NAMESPACE} kong-manager -o jsonpath='{.spec.host}')"
 echo ""
-echo "To access Kong Proxy:"
-echo "  http://\$(oc get route -n ${NAMESPACE} ${RELEASE_NAME}-kong-proxy -o jsonpath='{.spec.host}')"
+echo "To access Kong Admin API:"
+echo "  http://\$(oc get route -n ${NAMESPACE} kong-admin -o jsonpath='{.spec.host}')"
 echo ""
 echo "To verify deployment:"
 echo "  ./ai-gateways/kong/test-connectivity.sh"
