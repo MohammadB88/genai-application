@@ -39,7 +39,6 @@ echo "Deploying Kong Gateway (Official Chart)..."
 helm upgrade --install "${RELEASE_NAME}" kong/kong \
   --namespace "${NAMESPACE}" \
   -f ai-gateways/kong/values.yaml \
-  -f ai-gateways/kong/values-openshift.yaml \
   --wait --timeout 5m
 
 # Update SCC policy for Kong service account

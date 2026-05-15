@@ -19,6 +19,12 @@ else
   echo "Helm release ${RELEASE_NAME} not found in namespace ${NAMESPACE}."
 fi
 
+# Clean up manually created routes
+echo "Cleaning up routes..."
+oc delete route kong-manager -n "${NAMESPACE}" --ignore-not-found
+oc delete route kong-admin -n "${NAMESPACE}" --ignore-not-found
+echo "Routes cleaned up."
+
 # Optionally delete the namespace (uncomment if you want to delete the entire namespace)
 # echo "Deleting namespace ${NAMESPACE}..."
 # kubectl delete namespace "${NAMESPACE}"
