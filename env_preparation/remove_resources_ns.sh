@@ -28,14 +28,33 @@ else
   exit 1
 fi
 
+# Ask for deletion method
+echo "How would you like to remove the namespaces?"
+echo "1) Delete all resources inside first, then delete the namespace"
+echo "2) Delete the namespace directly (fastest, removes everything)"
+read -p "Select an option (1/2): " method
+
+if [[ "$method" == "1" ]]; then
+  echo "Proceeding with resource-first deletion..."
+  mode="cleanup"
+elif [[ "$method" == "2" ]]; then
+  echo "Proceeding with direct namespace deletion..."
+  mode="direct"
+else
+  echo "Invalid selection. Aborting."
+  exit 1
+fi
+
 # Loop through namespaces
 for ns in $namespaces; do
   echo "Processing namespace: $ns"
 
-  echo "Deleting all resources in $ns..."
-  oc api-resources --verbs=list --namespaced -o name | while read resource; do
-    oc delete "$resource" --all -n "$ns" --ignore-not-found
-  done
+  if [[ "$mode" == "cleanup" ]]; then
+    echo "Cleaning up resources in $ns..."
+    oc api-resources --verbs=list --namespaced -o name | while read resource; do
+      oc delete "$resource" --all -n "$ns" --ignore-not-found
+    done
+  fi
 
   echo "Deleting namespace: $ns"
   oc delete namespace "$ns"

@@ -5,15 +5,15 @@ route:
   # Set explicitly to use custom hostnames:
   #   host: kong-ai-gateway.apps.cluster.example.com
 
-# OpenShift requires specific security context
+# OpenShift requires specific security context within allowed ranges
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
+  # runAsUser: 1001010000
+  # runAsGroup: 1001010000
+  # fsGroup: 1001010000
 
-securityContext:
+containerSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
   capabilities:
     drop:
     - ALL

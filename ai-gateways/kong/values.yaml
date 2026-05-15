@@ -20,12 +20,13 @@ podLabels: {}
 
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
+  # runAsUser: 1001010000
+  # runAsGroup: 1001010000
+  # fsGroup: 1001010000
 
-securityContext:
+containerSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
+  # runAsUser: 1001010000
   capabilities:
     drop:
     - ALL
@@ -64,4 +65,8 @@ affinity: {}
 # Kong specific configuration
 env:
   database: "off"
-  KONG_PLUGINS: prometheus
+  # KONG_PLUGINS: prometheus
+
+# # Prometheus plugin configuration (if needed, otherwise defaults are used)
+# prometheus:
+#   enabled: true
