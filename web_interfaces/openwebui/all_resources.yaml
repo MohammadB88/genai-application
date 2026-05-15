@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openwebui
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openwebui-pvc
+  namespace: openwebui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openwebui
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+      - name: openwebui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPEN_WEBUI_SECRET_KEY
+          value: "super-secret-key-change-me"
+        - name: OPENAI_API_BASE_URL
+          value: "http://litemaas.ai-gateways.svc.cluster.local"
+        - name: OPENAI_API_KEY
+          value: "no-key"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/backend/data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: openwebui-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  selector:
+    app: openwebui
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  to:
+    kind: Service
+      name: openwebui
+  port:
+    https:
+      path: /

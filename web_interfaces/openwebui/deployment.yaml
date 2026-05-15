@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwebui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openwebui
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+      - name: openwebui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPEN_WEBUI_SECRET_KEY
+          value: "super-secret-key-change-me"
+        - name: OPENAI_API_BASE_URL
+          value: "http://litemaas.ai-gateways.svc.cluster.local"
+        - name: OPENAI_API_KEY
+          value: "no-key"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/backend/data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: openwebui-pvc
