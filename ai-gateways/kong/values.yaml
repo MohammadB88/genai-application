@@ -23,8 +23,7 @@ env:
   admin_error_log: /dev/stderr
 
 ingressController:
-  enabled: true
-  installCRDs: false
+  enabled: false
 
 admin:
   enabled: true
