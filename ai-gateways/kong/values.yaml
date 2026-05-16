@@ -16,6 +16,12 @@ env:
   admin_listen: "0.0.0.0:8001"
   admin_gui_listen: "0.0.0.0:8002"
 
+  # For OpenShift, set these to the external URLs for the admin API and GUI
+  # admin_gui_url: "https://kong-manager.apps.${CLUSTER_DOMAIN}"
+  # admin_gui_api_url: "https://kong-admin.apps.${CLUSTER_DOMAIN}"
+  admin_gui_url: "https://kong-manager-kong.apps.cluster-fq6cl.fq6cl.sandbox2576.opentlc.com"
+  admin_gui_api_url: "https://kong-admin-kong.apps.cluster-fq6cl.fq6cl.sandbox2576.opentlc.com"
+
   # Logs to stdout (OpenShift best practice)
   proxy_access_log: /dev/stdout
   proxy_error_log: /dev/stderr
