@@ -306,6 +306,8 @@ spec:
     metadata:
       labels:
         app: kong-postgres
+    securityContext:
+      fsGroup: 26
     spec:
       containers:
         - name: postgresql
