@@ -3,22 +3,14 @@
 set -euo pipefail
 
 NAMESPACE="${1:-kong}"
-RELEASE_NAME="${2:-kong}"
+CP_RELEASE="${2:-kong-cp}"
+DP_RELEASE="${3:-kong-dp}"
 
 echo "##############################################################"
-echo "Deploying Kong Gateway (Official Chart) to namespace: ${NAMESPACE}"
-echo "Release name: ${RELEASE_NAME}"
+echo "Deploying Kong Hybrid Mode to namespace: ${NAMESPACE}"
+echo "Control Plane release: ${CP_RELEASE}"
+echo "Data Plane release: ${DP_RELEASE}"
 echo "##############################################################"
-
-# Ask for CLUSTER_URL
-read -p "Enter the CLUSTER_URL (e.g., cluster.example.com): " CLUSTER_URL
-if [ -z "${CLUSTER_URL}" ]; then
-  echo "Error: CLUSTER_URL is required."
-  exit 1
-fi
-
-# Replace {CLUSTER_URL}} in values.yaml with the provided value
-sed -i "s/{CLUSTER_URL}}/ ${CLUSTER_URL}/g" ai-gateways/kong/values.yaml
 
 # Create namespace if it doesn't exist
 echo "Checking if namespace ${NAMESPACE} exists..."
@@ -29,42 +21,81 @@ else
   echo "Namespace ${NAMESPACE} already exists."
 fi
 
+# Generate cluster certificate for CP/DP communication
+echo "Generating cluster certificate..."
+openssl req -new -x509 -nodes -newkey ec:<(openssl ecparam -name secp384r1) \
+  -keyout /tmp/kong-cluster.key -out /tmp/kong-cluster.crt \
+  -days 1095 -subj "/CN=kong_clustering"
+
+# Create or update the TLS secret
+echo "Creating cluster certificate secret..."
+kubectl create secret tls kong-cluster-cert \
+  --cert=/tmp/kong-cluster.crt --key=/tmp/kong-cluster.key \
+  -n "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+
+# Clean up temp cert files
+rm -f /tmp/kong-cluster.key /tmp/kong-cluster.crt
+
 # Add Kong Helm repository
 echo "Adding Kong Helm repository..."
 helm repo add kong https://charts.konghq.com
 helm repo update
 
-# Deploy Kong using Official Helm chart with our custom values
-echo "Deploying Kong Gateway (Official Chart)..."
-helm upgrade --install "${RELEASE_NAME}" kong/kong \
+# Deploy Control Plane
+echo "=============================================="
+echo "Deploying Kong Control Plane..."
+echo "=============================================="
+helm upgrade --install "${CP_RELEASE}" kong/kong \
   --namespace "${NAMESPACE}" \
-  -f ai-gateways/kong/values.yaml \
+  -f ai-gateways/kong/values_cp.yaml \
   --wait --timeout 5m
 
-# Update SCC policy for Kong service account
-echo "Updating SCC policy for Kong service account..."
-oc adm policy add-scc-to-user anyuid -z kong -n "${NAMESPACE}"
-oc adm policy add-scc-to-user nonroot-v2 -z kong -n "${NAMESPACE}"
+# Update SCC policy for CP service account
+echo "Updating SCC policy for CP service account..."
+oc adm policy add-scc-to-user anyuid -z "${CP_RELEASE}-kong" -n "${NAMESPACE}" 2>/dev/null || true
+oc adm policy add-scc-to-user nonroot-v2 -z "${CP_RELEASE}-kong" -n "${NAMESPACE}" 2>/dev/null || true
 
-# Create routes
-echo "Creating routes..."
-# Route for Kong Manager
-oc create route edge kong-manager --service=kong-kong-manager -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
-# Route for Kong Admin
-oc create route edge kong-admin --service=kong-kong-admin -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+# Build DP cluster_control_plane value
+CP_CLUSTER_SVC="${CP_RELEASE}-cluster.${NAMESPACE}.svc.cluster.local:8005"
 
+# Deploy Data Plane
+echo "=============================================="
+echo "Deploying Kong Data Plane..."
+echo "=============================================="
+helm upgrade --install "${DP_RELEASE}" kong/kong \
+  --namespace "${NAMESPACE}" \
+  -f ai-gateways/kong/values_dp.yaml \
+  --set env.cluster_control_plane="${CP_CLUSTER_SVC}" \
+  --wait --timeout 5m
+
+# Update SCC policy for DP service account
+echo "Updating SCC policy for DP service account..."
+oc adm policy add-scc-to-user anyuid -z "${DP_RELEASE}-kong" -n "${NAMESPACE}" 2>/dev/null || true
+oc adm policy add-scc-to-user nonroot-v2 -z "${DP_RELEASE}-kong" -n "${NAMESPACE}" 2>/dev/null || true
+
+# Create OpenShift routes
+echo "Creating OpenShift routes..."
+# Route for CP Admin API
+oc create route edge kong-cp-admin --service="${CP_RELEASE}-admin" -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+# Route for DP Proxy
+oc create route edge kong-dp-proxy --service="${DP_RELEASE}-proxy" -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+
+echo ""
 echo "##############################################################"
-echo "Kong Gateway deployed successfully!"
+echo "Kong Hybrid Mode deployed successfully!"
 echo "Namespace: ${NAMESPACE}"
-echo "Release: ${RELEASE_NAME}"
-echo "Chart: kong/kong (Official)"
+echo "Control Plane: ${CP_RELEASE}"
+echo "Data Plane: ${DP_RELEASE}"
 echo "##############################################################"
-
-echo "To access Kong Manager:"
-echo "  http://\$(oc get route -n ${NAMESPACE} kong-manager -o jsonpath='{.spec.host}')"
 echo ""
-echo "To access Kong Admin API:"
-echo "  http://\$(oc get route -n ${NAMESPACE} kong-admin -o jsonpath='{.spec.host}')"
+echo "Control Plane Admin API:"
+echo "  https://$(oc get route -n "${NAMESPACE}" kong-cp-admin -o jsonpath='{.spec.host}' 2>/dev/null)"
 echo ""
-echo "To verify deployment:"
-echo "  ./ai-gateways/kong/test-connectivity.sh"
+echo "Data Plane Proxy:"
+echo "  https://$(oc get route -n "${NAMESPACE}" kong-dp-proxy -o jsonpath='{.spec.host}' 2>/dev/null)"
+echo ""
+echo "To verify CP nodes:"
+echo "  curl -s https://$(oc get route -n "${NAMESPACE}" kong-cp-admin -o jsonpath='{.spec.host}' 2>/dev/null)/clustering/data-planes"
+echo ""
+echo "To verify DP proxy:"
+echo "  curl -s https://$(oc get route -n "${NAMESPACE}" kong-dp-proxy -o jsonpath='{.spec.host}' 2>/dev/null)"

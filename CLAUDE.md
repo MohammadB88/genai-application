@@ -23,8 +23,22 @@ GenAI Application Platform - A production-ready infrastructure for deploying Gen
 ```
 genai-application/
 ├── env_preparation/              # Environment setup/cleanup scripts
+│   ├── argocd_deploy.sh          # Deploy ArgoCD resources
+│   ├── argocd_cleanup.sh         # Remove ArgoCD resources
+│   ├── kong_deploy.sh            # Deploy Kong AI Gateway
+│   ├── kong_cleanup.sh           # Remove Kong AI Gateway
+│   ├── litemaas_deploy.sh        # Deploy LiteLLM gateway
+│   ├── litemaas_cleanup.sh       # Remove LiteLLM gateway
+│   ├── models_deploy.sh          # Deploy LLM models
+│   ├── models_cleanup.sh         # Remove LLM models
+│   ├── monitoring_deploy.sh      # Deploy monitoring/alerting
+│   ├── monitoring_cleanup.sh     # Remove monitoring/alerting
+│   ├── web_interfaces_deploy.sh  # Deploy web GUIs
+│   ├── web_interfaces_cleanup.sh # Remove web GUIs
 │   ├── remove_resources_argocd.sh
-│   └── remove_resources_ns.sh
+│   ├── remove_resources_ns.sh
+│   ├── archived/                 # Archived scripts
+│   └── README.md
 ├── gitops/                       # ArgoCD AppProject/Application manifests
 │   ├── appproject.yaml          # ArgoCD project definition
 │   ├── root-application.yaml    # Root application for gitops
@@ -108,17 +122,9 @@ genai-application/
 │   │   ├── oauthclient.yaml
 │   │   └── values_oc.yaml
 │   └── kong/                    # Kong AI Gateway
-│       ├── Chart.yaml
 │       ├── values.yaml
-│       ├── values-openshift.yaml
 │       ├── README.md
-│       ├── test-connectivity.sh
-│       └── templates/            # Kubernetes manifest templates
-│           ├── deployment.yaml
-│           ├── service.yaml
-│           ├── route.yaml
-│           └── servicemonitor.yaml
-
+│       └── test-connectivity.sh
 ├── monitoring_alerting/         # Monitoring and alerting
 │   ├── grafana_openshift/       # Grafana dashboards
 │   │   ├── Readme.md
@@ -172,6 +178,26 @@ genai-application/
 # Enable user workload monitoring (required for ServiceMonitors)
 oc -n openshift-monitoring create configmap cluster-monitoring-config \
   --from-literal=config.yaml='enableUserWorkload: true'
+```
+
+### Deploy/Teardown Scripts
+Each component has a dedicated deploy/cleanup pair in `env_preparation/`:
+```sh
+# Deploy components
+./env_preparation/argocd_deploy.sh
+./env_preparation/kong_deploy.sh
+./env_preparation/litemaas_deploy.sh
+./env_preparation/models_deploy.sh
+./env_preparation/monitoring_deploy.sh
+./env_preparation/web_interfaces_deploy.sh
+
+# Remove components
+./env_preparation/argocd_cleanup.sh
+./env_preparation/kong_cleanup.sh
+./env_preparation/litemaas_cleanup.sh
+./env_preparation/models_cleanup.sh
+./env_preparation/monitoring_cleanup.sh
+./env_preparation/web_interfaces_cleanup.sh
 ```
 
 ### Deploy Components

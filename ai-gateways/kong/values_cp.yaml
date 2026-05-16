@@ -1,10 +1,5 @@
-# Default values for kong-gateway (AI Gateway deployment)
-# Based on: https://github.com/Kong/charts/blob/main/charts/kong/values.yaml
-# Reference: https://github.com/Kong/charts/blob/main/charts/kong/README.md
-
-# -----------------------------------------------------------------------------
-# Deployment parameters
-# -----------------------------------------------------------------------------
+# Control Plane values for Kong Hybrid Mode
+# Based on: https://github.com/Kong/charts/blob/main/charts/kong/README.md#hybrid-mode
 
 deployment:
   kong:
@@ -15,17 +10,14 @@ deployment:
     automountServiceAccountToken: false
   daemonset: false
   hostNetwork: false
-  hostname: ""
+  hostname: "cp"
   prefixDir:
     sizeLimit: 256Mi
   tmpDir:
     sizeLimit: 1Gi
 
-# -----------------------------------------------------------------------------
-# Kong parameters
-# -----------------------------------------------------------------------------
-
 env:
+  role: control_plane
   database: "off"
   router_flavor: "traditional"
   nginx_worker_processes: "2"
@@ -34,11 +26,13 @@ env:
   proxy_error_log: /dev/stderr
   admin_error_log: /dev/stderr
   prefix: /kong_prefix/
+  cluster_cert: /etc/secrets/kong-cluster-cert/tls.crt
+  cluster_cert_key: /etc/secrets/kong-cluster-cert/tls.key
 
 envFrom: []
 
 extraLabels:
-  app.kubernetes.io/component: ai-gateway
+  app.kubernetes.io/component: ai-gateway-cp
 
 image:
   repository: kong
@@ -46,19 +40,19 @@ image:
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
-nameOverride: "kong-ai-gateway"
-fullnameOverride: ""
+nameOverride: "kong-ai-gateway-cp"
+fullnameOverride: "kong-cp"
 
 admin:
-  enabled: false
+  enabled: true
   type: ClusterIP
   http:
-    enabled: false
+    enabled: true
     servicePort: 8001
     containerPort: 8001
     parameters: []
   tls:
-    enabled: false
+    enabled: true
     servicePort: 8444
     containerPort: 8444
     parameters:
@@ -81,10 +75,10 @@ status:
     parameters: []
 
 cluster:
-  enabled: false
+  enabled: true
   type: ClusterIP
   tls:
-    enabled: false
+    enabled: true
     servicePort: 8005
     containerPort: 8005
     parameters: []
@@ -92,19 +86,19 @@ cluster:
     enabled: false
 
 proxy:
-  enabled: true
+  enabled: false
   type: ClusterIP
   nameOverride: ""
   annotations: {}
   labels:
     enable-metrics: "true"
   http:
-    enabled: true
+    enabled: false
     servicePort: 80
     containerPort: 8000
     parameters: []
   tls:
-    enabled: true
+    enabled: false
     servicePort: 443
     containerPort: 8443
     parameters:
@@ -121,7 +115,8 @@ udpProxy:
 
 plugins: {}
 
-secretVolumes: []
+secretVolumes:
+- kong-cluster-cert
 
 migrations:
   preUpgrade: true
@@ -138,82 +133,14 @@ dblessConfig:
   secret: ""
   config: |
 
-# -----------------------------------------------------------------------------
-# Ingress Controller parameters
-# -----------------------------------------------------------------------------
-
 ingressController:
   enabled: false
-  image:
-    repository: kong/kubernetes-ingress-controller
-    tag: "3.5"
-  args: []
   gatewayDiscovery:
     enabled: false
     generateAdminApiService: false
     adminApiService:
       namespace: ""
       name: ""
-  watchNamespaces: []
-  env:
-    kong_admin_tls_skip_verify: true
-  envFrom: []
-  admissionWebhook:
-    enabled: true
-    filterSecrets: false
-    failurePolicy: Ignore
-    port: 8080
-    certificate:
-      provided: false
-    namespaceSelector: {}
-    objectSelector:
-      matchExpressions:
-      - key: owner
-        operator: NotIn
-        values:
-        - helm
-    service:
-      labels: {}
-  ingressClass: kong
-  createIngressClass: true
-  ingressClassAnnotations: {}
-  rbac:
-    create: true
-    enableClusterRoles: true
-    gatewayAPI:
-      enabled: true
-  livenessProbe:
-    httpGet:
-      path: "/healthz"
-      port: 10254
-      scheme: HTTP
-    initialDelaySeconds: 5
-    timeoutSeconds: 5
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  readinessProbe:
-    httpGet:
-      path: "/readyz"
-      port: 10254
-      scheme: HTTP
-    initialDelaySeconds: 5
-    timeoutSeconds: 5
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  resources: {}
-  adminApi:
-    tls:
-      client:
-        enabled: false
-        certProvided: false
-        secretName: ""
-        caSecretName: ""
-
-# -----------------------------------------------------------------------------
-# Postgres sub-chart parameters
-# -----------------------------------------------------------------------------
 
 postgresql:
   enabled: false
@@ -227,10 +154,6 @@ postgresql:
   service:
     ports:
       postgresql: "5432"
-
-# -----------------------------------------------------------------------------
-# cert-manager integration
-# -----------------------------------------------------------------------------
 
 certificates:
   enabled: false
@@ -248,10 +171,6 @@ certificates:
     clusterIssuer: ""
     commonName: "kong.example"
     dnsNames: []
-
-# -----------------------------------------------------------------------------
-# Miscellaneous parameters
-# -----------------------------------------------------------------------------
 
 waitImage:
   enabled: true
@@ -308,7 +227,7 @@ nodeSelector: {}
 podAnnotations: {}
 
 podLabels:
-  app.kubernetes.io/component: ai-gateway
+  app.kubernetes.io/component: ai-gateway-cp
 
 replicaCount: 1
 
@@ -346,11 +265,7 @@ serviceMonitor:
   enabled: true
   trustCRDsExist: false
   labels:
-    app.kubernetes.io/component: ai-gateway
-
-# -----------------------------------------------------------------------------
-# Enterprise parameters (disabled for OSS Kong)
-# -----------------------------------------------------------------------------
+    app.kubernetes.io/component: ai-gateway-cp
 
 enterprise:
   enabled: false
