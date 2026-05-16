@@ -7,7 +7,7 @@ MODEL_NAME="granite-3-1-8b-instruct"
 curl https://${KONG_PROXY}/${KONG_ROUTE}/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "${MODEL_NAME}",
+    "model": "granite-3-1-8b-instruct",
     "messages": [
       { "role": "user", "content": "Say hello in one sentence" }
     ]
