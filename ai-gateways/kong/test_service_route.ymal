@@ -1,0 +1,13 @@
+_format_version: "3.0"
+
+services:
+  - name: granite-declerative
+    url: http://granite.kong.svc.cluster.local:8080
+    routes:
+      - name: granite-route-declerative
+        paths:
+          - /granite-declerative
+        strip_path: true
+        protocols:
+          - http
+          - https

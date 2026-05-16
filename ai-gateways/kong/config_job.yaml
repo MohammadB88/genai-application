@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-deck-sync
+  namespace: kong
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: deck
+          image: kong/deck:1.40.0
+          command: ["sh", "-c"]
+          args:
+            - deck gateway sync /config/kong.yaml --kong-addr http://kong-kong-admin:8001
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          env:
+            - name: DECK_KONG_ADDR
+              value: "http://kong-kong-admin:8001"
+      volumes:
+        - name: config
+          configMap:
+            name: kong-deck-config
