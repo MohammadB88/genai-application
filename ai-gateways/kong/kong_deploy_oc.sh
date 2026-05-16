@@ -17,6 +17,15 @@
 
 set -euo pipefail
 
+# ── Input prompts (override via environment) ─────────────────────────────────
+read -p "Enter Cluster Hostname (e.g., app.example.com): " CLUSTER_HOST
+read -p "Enter PostgreSQL password: " PG_PASSWORD
+
+# Construct default hostnames based on cluster hostname
+export ADMIN_HOST="kong-admin.apps.${CLUSTER_HOST}"
+export MANAGER_HOST="kong-manager.apps.${CLUSTER_HOST}"
+export PROXY_HOST="kong-proxy.apps.${CLUSTER_HOST}"
+
 # ── Config (override via environment) ─────────────────────────────────────────
 NAMESPACE="${NAMESPACE:-kong}"
 RELEASE="${RELEASE:-kong}"
