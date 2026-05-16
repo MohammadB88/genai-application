@@ -1,0 +1,98 @@
+# Kong Gateway OSS – OpenShift values.yaml
+# Helm chart: kong/kong  (https://github.com/Kong/charts)
+
+image:
+  repository: kong
+  tag: "3.7"          # pin to a specific release you've tested
+  pullPolicy: IfNotPresent
+
+# ── Deployment ────────────────────────────────────────────────────────────────
+replicaCount: 1
+
+# OpenShift runs containers as an arbitrary UID; drop the securityContext
+# overrides so the restricted SCC is satisfied.
+securityContext: {}
+containerSecurityContext: {}
+
+# ── Database ──────────────────────────────────────────────────────────────────
+env:
+  database: postgres
+  pg_host: postgres.postgres.svc.cluster.local
+  pg_port: "5432"
+  pg_database: kong
+  pg_user: kong
+  pg_password:
+    valueFrom:
+      secretKeyRef:
+        name: kong-postgres-secret   # create this secret before installing
+        key: password
+
+  # ── Listeners – bind to 0.0.0.0 so OpenShift Routes can reach the pods ──────
+  admin_listen: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
+  admin_gui_listen: "0.0.0.0:8002, 0.0.0.0:8445 ssl"
+  proxy_listen: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+
+  # Kong Manager needs to know the public URL of the Admin API
+  admin_gui_api_url: ""          # set at install time, see bash script below
+  admin_api_uri: ""              # same value – older chart versions use this key
+
+# ── Services ──────────────────────────────────────────────────────────────────
+# Use ClusterIP everywhere; OpenShift Routes handle external exposure.
+admin:
+  enabled: true
+  type: ClusterIP
+  port: 8001
+  annotations: {}
+
+adminGui:
+  enabled: true
+  type: ClusterIP
+  port: 8002
+  annotations: {}
+
+proxy:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 80
+    containerPort: 8000
+  tls:
+    enabled: true
+    servicePort: 443
+    containerPort: 8443
+  annotations: {}
+
+# ── Ingress controller (disabled – we use Routes instead) ─────────────────────
+ingressController:
+  enabled: false
+
+# ── DB migrations (run as a Job before the main deployment) ───────────────────
+migrations:
+  preUpgrade: true
+  postUpgrade: true
+
+# ── Pod settings ──────────────────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+readinessProbe:
+  httpGet:
+    path: /status
+    port: 8001
+    scheme: HTTP
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /status
+    port: 8001
+    scheme: HTTP
+  initialDelaySeconds: 30
+  periodSeconds: 30
