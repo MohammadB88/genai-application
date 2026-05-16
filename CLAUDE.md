@@ -108,6 +108,12 @@ genai-application/
 │       ├── secret.yaml
 │       ├── kustomization.yaml
 │       └── pvc.yaml
+├── databases/                   # Database deployments
+│   └── postgres/                # PostgreSQL database
+│       ├── deployment.yaml
+│       ├── pvc.yaml
+│       ├── secret.yaml
+│       └── service.yaml
 ├── web_interfaces/              # GUI deployments
 │   └── anythingllm/             # AnythingLLM GUI
 │       ├── all_resources.yaml
@@ -189,6 +195,7 @@ Each component has a dedicated deploy/cleanup pair in `env_preparation/`:
 ./env_preparation/litemaas_deploy.sh
 ./env_preparation/models_deploy.sh
 ./env_preparation/monitoring_deploy.sh
+./env_preparation/postgresql_deploy.sh
 ./env_preparation/web_interfaces_deploy.sh
 
 # Remove components
@@ -197,6 +204,7 @@ Each component has a dedicated deploy/cleanup pair in `env_preparation/`:
 ./env_preparation/litemaas_cleanup.sh
 ./env_preparation/models_cleanup.sh
 ./env_preparation/monitoring_cleanup.sh
+./env_preparation/postgresql_cleanup.sh  # If exists
 ./env_preparation/web_interfaces_cleanup.sh
 ```
 
@@ -230,6 +238,9 @@ kubectl apply -f models/nvidia_nim/llama3-8b/
 
 # AnythingLLM GUI
 kubectl apply -f web_interfaces/anythingllm/all_resources.yaml
+
+# PostgreSQL
+./env_preparation/postgresql_deploy.sh
 
 # k6 Operator for load testing
 helm repo add grafana https://grafana.github.io/helm-charts
@@ -479,6 +490,7 @@ The `ai-gateways/kong/` directory contains configurations for deploying Kong Gat
   - `controller.enabled: false` — KIC not needed, OpenShift router handles ingress
   - `gateway`: Kong Gateway (nginx) — handles proxy traffic in DB-less mode
 - `README.md`: Deployment and configuration guide
+- `kong_deploy_oc.sh`: Deployment script for OpenShift
 - `test-connectivity.sh`: Script to verify the deployment
 
 ## Infrastructure Automation
