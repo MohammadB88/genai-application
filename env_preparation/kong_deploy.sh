@@ -128,11 +128,11 @@ echo "=============================================="
 helm upgrade --install "${CP_RELEASE}" kong/kong \
   --namespace "${NAMESPACE}" \
   -f ai-gateways/kong/values_cp.yaml \
-  --set env.pg_host="value=${PG_HOST}" \
-  --set env.pg_port="value=5432" \
-  --set env.pg_user="value=kong" \
-  --set env.pg_password="value=kong" \
-  --set env.pg_database="value=kong" \
+  --set env.pg_host="${PG_HOST}" \
+  --set env.pg_port="5432" \
+  --set env.pg_user="kong" \
+  --set env.pg_password="kong" \
+  --set env.pg_database="kong" \
   --wait --timeout 5m
 
 # Update SCC policy for CP service account
