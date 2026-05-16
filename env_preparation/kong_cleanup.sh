@@ -3,36 +3,46 @@
 set -euo pipefail
 
 NAMESPACE="${1:-kong}"
-RELEASE_NAME="${2:-kong}"
+CP_RELEASE="${2:-kong-cp}"
+DP_RELEASE="${3:-kong-dp}"
 
 echo "##############################################################"
-echo "Cleaning up Kong AI Gateway from namespace: ${NAMESPACE}"
-echo "Release name: ${RELEASE_NAME}"
+echo "Cleaning up Kong Hybrid Mode from namespace: ${NAMESPACE}"
+echo "Control Plane release: ${CP_RELEASE}"
+echo "Data Plane release: ${DP_RELEASE}"
 echo "##############################################################"
 
-# Uninstall Helm release
-echo "Uninstalling Helm release ${RELEASE_NAME}..."
-if helm list -n "${NAMESPACE}" | grep -q "${RELEASE_NAME}"; then
-  helm uninstall "${RELEASE_NAME}" --namespace "${NAMESPACE}"
-  echo "Helm release ${RELEASE_NAME} uninstalled."
+# Uninstall Data Plane Helm release
+echo "Uninstalling Data Plane ${DP_RELEASE}..."
+if helm list -n "${NAMESPACE}" | grep -q "${DP_RELEASE}"; then
+  helm uninstall "${DP_RELEASE}" --namespace "${NAMESPACE}"
+  echo "Data Plane uninstalled."
 else
-  echo "Helm release ${RELEASE_NAME} not found in namespace ${NAMESPACE}."
+  echo "Data Plane release ${DP_RELEASE} not found."
 fi
 
-# Clean up manually created routes
+# Uninstall Control Plane Helm release
+echo "Uninstalling Control Plane ${CP_RELEASE}..."
+if helm list -n "${NAMESPACE}" | grep -q "${CP_RELEASE}"; then
+  helm uninstall "${CP_RELEASE}" --namespace "${NAMESPACE}"
+  echo "Control Plane uninstalled."
+else
+  echo "Control Plane release ${CP_RELEASE} not found."
+fi
+
+# Delete cluster certificate secret
+echo "Deleting cluster certificate secret..."
+kubectl delete secret kong-cluster-cert -n "${NAMESPACE}" --ignore-not-found
+
+# Clean up routes
 echo "Cleaning up routes..."
-oc delete route kong-manager -n "${NAMESPACE}" --ignore-not-found
-oc delete route kong-admin -n "${NAMESPACE}" --ignore-not-found
+oc delete route kong-cp-admin -n "${NAMESPACE}" --ignore-not-found
+oc delete route kong-dp-proxy -n "${NAMESPACE}" --ignore-not-found
 echo "Routes cleaned up."
 
-# Optionally delete the namespace (uncomment if you want to delete the entire namespace)
-# echo "Deleting namespace ${NAMESPACE}..."
-# kubectl delete namespace "${NAMESPACE}"
-
 echo "##############################################################"
-echo "Kong AI Gateway cleanup completed!"
+echo "Kong Hybrid Mode cleanup completed!"
 echo "Namespace: ${NAMESPACE}"
-echo "Release: ${RELEASE_NAME}"
 echo "Note: Namespace ${NAMESPACE} was NOT deleted to preserve other resources."
 echo "To delete namespace, run: kubectl delete namespace ${NAMESPACE}"
 echo "##############################################################"

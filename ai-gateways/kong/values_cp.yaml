@@ -40,7 +40,7 @@ image:
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
-nameOverride: "kong-ai-gateway-cp"
+nameOverride: ""
 fullnameOverride: "kong-cp"
 
 admin:
