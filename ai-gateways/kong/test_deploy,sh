@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# test-kong.sh – smoke test Kong services from inside the cluster
+# Usage: NAMESPACE=kong RELEASE=kong ./test-kong.sh
+
+set -euo pipefail
+
+NS="${NAMESPACE:-kong}"
+REL="${RELEASE:-kong}"
+
+run() {
+  echo -n "$1 ... "
+  oc run kong-test-$$ --image=curlimages/curl:8.7.1 --restart=Never --rm -i -q \
+    --namespace "$NS" --command -- curl -sf "$2" && echo "✅" || echo "❌"
+}
+
+run "Admin API"        "http://${REL}-kong-admin:8001/"
+run "Admin /status (DB)" "http://${REL}-kong-admin:8001/status"
+run "Manager UI"       "http://${REL}-kong-admin-gui:8002/"
+
+# 404 from Kong = proxy is up but no routes configured yet
+echo -n "Proxy ... "
+code=$(oc run kong-test-$$ --image=curlimages/curl:8.7.1 --restart=Never --rm -i -q \
+  --namespace "$NS" --command -- curl -s -o /dev/null -w "%{http_code}" \
+  "http://${REL}-kong-proxy:8000/" 2>/dev/null)
+[[ "$code" =~ ^(200|404)$ ]] && echo "✅ (HTTP $code)" || echo "❌ (HTTP $code)"
