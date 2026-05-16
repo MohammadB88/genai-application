@@ -160,10 +160,8 @@ oc adm policy add-scc-to-user nonroot-v2 -z "${DP_RELEASE}-kong" -n "${NAMESPACE
 
 # Create OpenShift routes
 echo "Creating OpenShift routes..."
-# Route for CP Admin API
-oc create route edge kong-cp-admin --service="${CP_RELEASE}-admin" -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
-# Route for DP Proxy
-oc create route edge kong-dp-proxy --service="${DP_RELEASE}-proxy" -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+# Route for CP Kong Manager GUI
+oc create route edge kong-cp-manager --service="${CP_RELEASE}-manager" -n "${NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
 
 echo ""
 echo "##############################################################"
@@ -173,14 +171,9 @@ echo "Control Plane: ${CP_RELEASE}"
 echo "Data Plane: ${DP_RELEASE}"
 echo "##############################################################"
 echo ""
-echo "Control Plane Admin API:"
-echo "  https://$(oc get route -n "${NAMESPACE}" kong-cp-admin -o jsonpath='{.spec.host}' 2>/dev/null)"
-echo ""
-echo "Data Plane Proxy:"
-echo "  https://$(oc get route -n "${NAMESPACE}" kong-dp-proxy -o jsonpath='{.spec.host}' 2>/dev/null)"
+echo "Control Plane Kong Manager GUI:"
+echo "  https://$(oc get route -n "${NAMESPACE}" kong-cp-manager -o jsonpath='{.spec.host}' 2>/dev/null)"
 echo ""
 echo "To verify CP nodes:"
-echo "  curl -s https://$(oc get route -n "${NAMESPACE}" kong-cp-admin -o jsonpath='{.spec.host}' 2>/dev/null)/clustering/data-planes"
-echo ""
-echo "To verify DP proxy:"
-echo "  curl -s https://$(oc get route -n "${NAMESPACE}" kong-dp-proxy -o jsonpath='{.spec.host}' 2>/dev/null)"
+echo "  curl -sk https://$(oc get route -n "${NAMESPACE}" kong-cp-manager -o jsonpath='{.spec.host}' 2>/dev/null)/api/clustering/data-planes"
+

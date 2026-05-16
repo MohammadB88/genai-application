@@ -25,6 +25,7 @@ env:
   admin_access_log: /dev/stdout
   proxy_error_log: /dev/stderr
   admin_error_log: /dev/stderr
+  admin_gui_listen: "0.0.0.0:8002, [::]:8002, 0.0.0.0:8445 http2 ssl, [::]:8445 http2 ssl"
   prefix: /kong_prefix/
   cluster_cert: /etc/secrets/kong-cluster-cert/tls.crt
   cluster_cert_key: /etc/secrets/kong-cluster-cert/tls.key
@@ -60,6 +61,23 @@ admin:
     client:
       caBundle: ""
       secretName: ""
+  ingress:
+    enabled: false
+
+manager:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 8002
+    containerPort: 8002
+    parameters: []
+  tls:
+    enabled: true
+    servicePort: 8445
+    containerPort: 8445
+    parameters:
+    - http2
   ingress:
     enabled: false
 

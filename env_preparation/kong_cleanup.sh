@@ -43,8 +43,7 @@ kubectl delete pvc "${PG_SERVICE}" -n "${NAMESPACE}" --ignore-not-found
 
 # Clean up routes
 echo "Cleaning up routes..."
-oc delete route kong-cp-admin -n "${NAMESPACE}" --ignore-not-found
-oc delete route kong-dp-proxy -n "${NAMESPACE}" --ignore-not-found
+oc delete route kong-cp-manager -n "${NAMESPACE}" --ignore-not-found
 echo "Routes cleaned up."
 
 echo "##############################################################"
