@@ -34,6 +34,10 @@ fi
 echo "Deleting cluster certificate secret..."
 kubectl delete secret kong-cluster-cert -n "${NAMESPACE}" --ignore-not-found
 
+# Delete Postgres PVC (created by Postgres sub-chart)
+echo "Deleting Postgres PVC..."
+kubectl delete pvc "data-${CP_RELEASE}-postgresql-0" -n "${NAMESPACE}" --ignore-not-found
+
 # Clean up routes
 echo "Cleaning up routes..."
 oc delete route kong-cp-admin -n "${NAMESPACE}" --ignore-not-found
