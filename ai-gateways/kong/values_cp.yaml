@@ -147,6 +147,8 @@ postgresql:
   auth:
     username: kong
     database: kong
+    password: kong
+    postgresPassword: kong
   image:
     registry: registry.redhat.io
     repository: rhel8/postgresql-13
