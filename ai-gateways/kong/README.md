@@ -1,214 +1,122 @@
-# Kong AI Gateway - Hybrid Mode Deployment (Using Official Helm Chart)
+# Kong AI Gateway — OpenShift Deployment
 
-This directory contains configuration files for deploying Kong AI Gateway in **Hybrid Mode** on OpenShift/Kubernetes using the official Kong Helm chart.
+This directory contains configuration for deploying Kong Gateway as a
+standalone API Gateway on OpenShift using the `kong/ingress` Helm chart
+(with the Kong Ingress Controller disabled — OpenShift's built-in router
+handles ingress).
 
-Hybrid mode splits Kong into **Control Plane (CP)** nodes (Admin API, database interactions) and **Data Plane (DP)** nodes (proxy traffic). DP nodes receive configuration from CP nodes over a TLS-secured cluster channel.
+## Architecture
 
-## Directory Structure
+Only the **gateway** pod runs — Kong Gateway (nginx) in DB-less mode,
+configured via its Admin API or declarative config.
+
+OpenShift Routes expose the proxy and admin services externally.
 
 ```
-ai-gateways/kong/
-├── values_cp.yaml           # Control Plane configuration
-├── values_dp.yaml           # Data Plane configuration
-├── test-connectivity.sh     # Script to verify deployment
-└── README.md                # This file
+                    Kong Gateway (nginx)
+                    ┌────────────────────┐
+                    │  Proxy :8000/8443  │  ─── OpenShift Route
+                    │  Admin :8001/8444  │  ─── OpenShift Route
+                    │  Status:8100       │
+                    └────────────────────┘
 ```
-
-## Prerequisites
-
-1. **OpenShift/Kubernetes Cluster**: Access to an OpenShift 4.x+ or Kubernetes 1.21+ cluster
-2. **Helm 3.x**: Install Helm following the [official guide](https://helm.sh/docs/intro/install/)
-3. **kubectl/oc CLI**: Configured to communicate with your cluster
-4. **OpenSSL**: For generating cluster certificates
-5. **Namespace**: Create or have access to a target namespace (e.g., `kong`)
 
 ## Deployment
 
 ### Quick Deploy
 
-Use the provided scripts to deploy and clean up both CP and DP:
-
 ```bash
-# Deploy
-./env_preparation/kong_deploy.sh [namespace] [cp-release-name] [dp-release-name]
-
-# Cleanup
-./env_preparation/kong_cleanup.sh [namespace] [cp-release-name] [dp-release-name]
+./env_preparation/kong_deploy.sh [namespace] [release-name]
 ```
 
-Defaults: `namespace=kong`, `cp-release-name=kong-cp`, `dp-release-name=kong-dp`
-
-```bash
-# Deploy with defaults
-./env_preparation/kong_deploy.sh
-
-# Cleanup with defaults
-./env_preparation/kong_cleanup.sh
-
-# Deploy with custom names
-./env_preparation/kong_deploy.sh my-namespace my-cp my-dp
-```
+Defaults: `namespace=kong`, `release-name=kong`
 
 ### Manual Deployment
 
-#### 1. Add Kong Helm Repository
-
 ```bash
+# 1. Add Kong Helm repository
 helm repo add kong https://charts.konghq.com
 helm repo update
-```
 
-#### 2. Generate Cluster Certificate
-
-Hybrid mode requires a TLS certificate for CP/DP communication:
-
-```bash
-openssl req -new -x509 -nodes -newkey ec:<(openssl ecparam -name secp384r1) \
-  -keyout /tmp/cluster.key -out /tmp/cluster.crt \
-  -days 1095 -subj "/CN=kong_clustering"
-
-kubectl create secret tls kong-cluster-cert \
-  --cert=/tmp/cluster.crt --key=/tmp/cluster.key \
-  -n kong
-```
-
-#### 3. Deploy Control Plane
-
-```bash
-helm install kong-cp kong/kong \
-  --namespace kong \
-  -f ai-gateways/kong/values_cp.yaml \
+# 2. Install Kong Gateway (KIC disabled)
+helm install kong kong/ingress \
+  --namespace kong --create-namespace \
+  -f ai-gateways/kong/values.yaml \
   --wait --timeout 5m
+
+# 3. OpenShift SCC — allow the gateway to run with assigned UID
+oc adm policy add-scc-to-user nonroot-v2 -z kong-gateway-kong -n kong
+
+# 4. Create OpenShift Routes (the chart creates ClusterIP services only)
+oc create route edge kong-proxy --service=kong-kong-gateway-proxy --port=443 -n kong
+oc create route edge kong-admin --service=kong-kong-gateway-admin --port=8001 -n kong
 ```
 
-#### 4. Deploy Data Plane
+## Usage — Configuring Routes via Admin API
 
-Determine the CP cluster service address and pass it to the DP:
+Once deployed, configure AI service routes via the Admin API:
 
 ```bash
-helm install kong-dp kong/kong \
-  --namespace kong \
-  -f ai-gateways/kong/values_dp.yaml \
-  --set env.cluster_control_plane="kong-cp-cluster.kong.svc.cluster.local:8005" \
-  --wait --timeout 5m
+ADMIN_URL="https://$(oc get route kong-admin -n kong -o jsonpath='{.spec.host}')"
+
+# Add an upstream service (e.g. Ollama)
+curl -sk -X POST "${ADMIN_URL}/upstreams" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ollama-upstream"}'
+
+# Add a target
+curl -sk -X POST "${ADMIN_URL}/upstreams/ollama-upstream/targets" \
+  -H "Content-Type: application/json" \
+  -d '{"target": "ollama.model-ollama.svc.cluster.local:11434", "weight": 100}'
+
+# Add a service
+curl -sk -X POST "${ADMIN_URL}/services" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ollama-service",
+    "host": "ollama-upstream",
+    "port": 11434,
+    "protocol": "http"
+  }'
+
+# Add a route
+curl -sk -X POST "${ADMIN_URL}/services/ollama-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ollama-route",
+    "paths": ["/ollama"]
+  }'
 ```
 
-#### 5. Create OpenShift Routes
-
-```bash
-# CP Admin API
-oc create route edge kong-cp-admin --service=kong-cp-admin -n kong
-
-# DP Proxy
-oc create route edge kong-dp-proxy --service=kong-dp-proxy -n kong
-```
-
-#### 6. Verify Deployment
-
-Check that both CP and DP pods are running and connected:
+## Verification
 
 ```bash
 # Check pods
 oc get pods -n kong
 
-# Check CP clustering status (DP nodes should appear)
-curl -s https://$(oc get route kong-cp-admin -n kong -o jsonpath='{.spec.host}')/clustering/data-planes
-```
+# Test proxy health
+curl -sk https://$(oc get route kong-proxy -n kong -o jsonpath='{.spec.host}')/status
 
-## Architecture
+# Test Admin API
+curl -sk https://$(oc get route kong-admin -n kong -o jsonpath='{.spec.host}')/status
 
-```
-                  ┌──────────────────┐
-                  │   PostgreSQL     │
-                  │   (optional)     │
-                  └────────┬─────────┘
-                           │
-                  ┌────────▼─────────┐
-                  │  Control Plane   │
-                  │  (Admin API)     │
-                  │  Port: 8005/TLS  │
-                  └────────┬─────────┘
-                           │ cluster sync
-          ┌────────────────┼────────────────┐
-          │                │                │
-  ┌───────▼───────┐ ┌──────▼───────┐ ┌──────▼───────┐
-  │  Data Plane   │ │  Data Plane  │ │  Data Plane  │
-  │  (Proxy)      │ │  (Proxy)     │ │  (Proxy)     │
-  │  Port 80/443  │ │  Port 80/443 │ │  Port 80/443 │
-  └───────────────┘ └──────────────┘ └──────────────┘
-```
-
-## Configuration Files
-
-### Control Plane (`values_cp.yaml`)
-
-- `env.role: control_plane` - Sets Kong role to CP
-- `cluster.enabled: true` - Exposes cluster listen port (8005/TLS)
-- `proxy.enabled: false` - CP does not handle proxy traffic
-- `admin.enabled: true` - Admin API for configuration
-- `secretVolumes: [kong-cluster-cert]` - Mounts the cluster TLS certificate
-- `fullnameOverride: "kong-cp"` - Predictable resource naming
-- Custom labels (`extraLabels`, `podLabels`) commented out to avoid selector mismatches
-
-### Data Plane (`values_dp.yaml`)
-
-- `env.role: data_plane` - Sets Kong role to DP
-- `env.database: "off"` - DP is stateless, receives config from CP
-- `env.cluster_control_plane` - Points to the CP cluster service
-- `proxy.enabled: true` - DP handles all proxy traffic
-- `admin.enabled: false` - Admin API disabled on DP
-- `migrations.preUpgrade/postUpgrade: false` - Migrations run on CP only
-- `waitImage.enabled: false` - No DB dependency on DP
-- `fullnameOverride: "kong-dp"` - Predictable resource naming
-- Custom labels (`extraLabels`, `podLabels`) commented out to avoid selector mismatches
-
-## Accessing Kong
-
-### Control Plane Admin API
-```
-https://<kong-cp-admin-route-host>
-```
-
-Use this for configuration, plugin management, and monitoring connected DP nodes.
-
-### Data Plane Proxy
-```
-https://<kong-dp-proxy-route-host>
-```
-
-All AI traffic routes through this endpoint.
-
-## Upgrading
-
-When upgrading Kong versions, always upgrade the **Control Plane first**, then the **Data Plane**:
-
-```bash
-# 1. Upgrade CP
-helm upgrade kong-cp kong/kong \
-  --namespace kong \
-  -f ai-gateways/kong/values_cp.yaml \
-  --wait --timeout 5m
-
-# 2. Upgrade DP
-helm upgrade kong-dp kong/kong \
-  --namespace kong \
-  -f ai-gateways/kong/values_dp.yaml \
-  --set env.cluster_control_plane="kong-cp-cluster.kong.svc.cluster.local:8005" \
-  --wait --timeout 5m
+# List configured services
+curl -sk https://$(oc get route kong-admin -n kong -o jsonpath='{.spec.host}')/services
 ```
 
 ## Uninstalling
 
 ```bash
-helm uninstall kong-dp --namespace kong
-helm uninstall kong-cp --namespace kong
-kubectl delete secret kong-cluster-cert -n kong
-# Optionally delete the namespace
-oc delete project kong
+# Quick cleanup
+./env_preparation/kong_cleanup.sh [namespace] [release-name]
+
+# Manual
+helm uninstall kong -n kong
+oc delete route kong-proxy kong-admin -n kong --ignore-not-found
 ```
 
 ## References
 
-- [Kong Hybrid Mode Documentation](https://docs.konghq.com/gateway/latest/plan-and-deploy/hybrid-mode/)
-- [Kong Helm Chart - Hybrid Mode](https://github.com/Kong/charts/blob/main/charts/kong/README.md#hybrid-mode)
-- [Kong Documentation](https://docs.konghq.com/gateway/latest/)
+- [Kong Gateway on OpenShift](https://docs.konghq.com/gateway/latest/install/openshift/)
+- [kong/ingress chart](https://github.com/Kong/charts/tree/main/charts/ingress)
+- [Kong Admin API](https://docs.konghq.com/gateway/latest/admin-api/)

@@ -1,360 +1,170 @@
-# Default values for kong-gateway (AI Gateway deployment)
-# Based on: https://github.com/Kong/charts/blob/main/charts/kong/values.yaml
-# Reference: https://github.com/Kong/charts/blob/main/charts/kong/README.md
+# =============================================================================
+# Kong AI Gateway — OpenShift Deployment
+# Chart: kong/ingress (https://github.com/Kong/charts/tree/main/charts/ingress)
+# =============================================================================
+# On OpenShift we only deploy the gateway (proxy) part — the Kong Ingress
+# Controller (KIC) is disabled because OpenShift's built-in router already
+# handles ingress. Kong runs as a standalone API gateway in DB-less mode,
+# exposed via OpenShift Routes.
+#
+# OpenShift-specific settings:
+#   - No fixed UID/GID (OpenShift assigns random UIDs)
+#   - runAsNonRoot: true
+#   - UBI-based Kong Gateway image
+#   - Routes instead of Ingress resources
+# =============================================================================
 
-# -----------------------------------------------------------------------------
-# Deployment parameters
-# -----------------------------------------------------------------------------
-
-deployment:
-  kong:
-    enabled: true
-  revisionHistoryLimit: 10
-  serviceAccount:
-    create: true
-    automountServiceAccountToken: false
-  daemonset: false
-  hostNetwork: false
-  hostname: ""
-  prefixDir:
-    sizeLimit: 256Mi
-  tmpDir:
-    sizeLimit: 1Gi
-
-# -----------------------------------------------------------------------------
-# Kong parameters
-# -----------------------------------------------------------------------------
-
-env:
-  database: "off"
-  router_flavor: "traditional"
-  nginx_worker_processes: "2"
-  proxy_access_log: /dev/stdout
-  admin_access_log: /dev/stdout
-  proxy_error_log: /dev/stderr
-  admin_error_log: /dev/stderr
-  prefix: /kong_prefix/
-
-envFrom: []
-
-extraLabels:
-  app.kubernetes.io/component: ai-gateway
-
-image:
-  repository: kong
-  tag: "3.9"
-  pullPolicy: IfNotPresent
-
-imagePullSecrets: []
-nameOverride: "kong-ai-gateway"
-fullnameOverride: ""
-
-admin:
+# ---------------------------------------------------------------------------
+# Controller (KIC) — disabled on OpenShift
+# OpenShift's built-in router handles ingress; we only need the gateway.
+# ---------------------------------------------------------------------------
+controller:
   enabled: false
-  type: ClusterIP
-  http:
-    enabled: false
-    servicePort: 8001
-    containerPort: 8001
-    parameters: []
-  tls:
-    enabled: false
-    servicePort: 8444
-    containerPort: 8444
-    parameters:
-    - http2
-    client:
-      caBundle: ""
-      secretName: ""
-  ingress:
-    enabled: false
 
-status:
+# ---------------------------------------------------------------------------
+# Gateway — Kong Proxy (handles all AI gateway traffic)
+# ---------------------------------------------------------------------------
+gateway:
   enabled: true
-  http:
-    enabled: true
-    containerPort: 8100
-    parameters: []
-  tls:
-    enabled: false
-    containerPort: 8543
-    parameters: []
 
-cluster:
-  enabled: false
-  type: ClusterIP
-  tls:
-    enabled: false
-    servicePort: 8005
-    containerPort: 8005
-    parameters: []
-  ingress:
-    enabled: false
-
-proxy:
-  enabled: true
-  type: ClusterIP
-  nameOverride: ""
-  annotations: {}
-  labels:
-    enable-metrics: "true"
-  http:
-    enabled: true
-    servicePort: 80
-    containerPort: 8000
-    parameters: []
-  tls:
-    enabled: true
-    servicePort: 443
-    containerPort: 8443
-    parameters:
-    - http2
-    appProtocol: ""
-  stream: []
-  ingress:
-    enabled: false
-
-udpProxy:
-  enabled: false
-  type: LoadBalancer
-  stream: []
-
-plugins: {}
-
-secretVolumes: []
-
-migrations:
-  preUpgrade: true
-  postUpgrade: true
-  annotations:
-    sidecar.istio.io/inject: "false"
-  jobAnnotations: {}
-  backoffLimit: {}
-  ttlSecondsAfterFinished: ""
-  resources: {}
-
-dblessConfig:
-  configMap: ""
-  secret: ""
-  config: |
-
-# -----------------------------------------------------------------------------
-# Ingress Controller parameters
-# -----------------------------------------------------------------------------
-
-ingressController:
-  enabled: false
-  image:
-    repository: kong/kubernetes-ingress-controller
-    tag: "3.5"
-  args: []
-  gatewayDiscovery:
-    enabled: false
-    generateAdminApiService: false
-    adminApiService:
-      namespace: ""
-      name: ""
-  watchNamespaces: []
-  env:
-    kong_admin_tls_skip_verify: true
-  envFrom: []
-  admissionWebhook:
-    enabled: true
-    filterSecrets: false
-    failurePolicy: Ignore
-    port: 8080
-    certificate:
-      provided: false
-    namespaceSelector: {}
-    objectSelector:
-      matchExpressions:
-      - key: owner
-        operator: NotIn
-        values:
-        - helm
-    service:
-      labels: {}
-  ingressClass: kong
-  createIngressClass: true
-  ingressClassAnnotations: {}
-  rbac:
-    create: true
-    enableClusterRoles: true
-    gatewayAPI:
+  deployment:
+    kong:
       enabled: true
-  livenessProbe:
-    httpGet:
-      path: "/healthz"
-      port: 10254
-      scheme: HTTP
-    initialDelaySeconds: 5
-    timeoutSeconds: 5
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  readinessProbe:
-    httpGet:
-      path: "/readyz"
-      port: 10254
-      scheme: HTTP
-    initialDelaySeconds: 5
-    timeoutSeconds: 5
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  resources: {}
-  adminApi:
-    tls:
-      client:
-        enabled: false
-        certProvided: false
-        secretName: ""
-        caSecretName: ""
 
-# -----------------------------------------------------------------------------
-# Postgres sub-chart parameters
-# -----------------------------------------------------------------------------
+  nameOverride: "kong-gateway"
 
-postgresql:
-  enabled: false
-  auth:
-    username: kong
-    database: kong
   image:
-    registry: ""
-    repository: ""
-    tag: ""
-  service:
-    ports:
-      postgresql: "5432"
+    repository: kong/kong-gateway
+    tag: "3.9.0-ubi"
+    pullPolicy: IfNotPresent
 
-# -----------------------------------------------------------------------------
-# cert-manager integration
-# -----------------------------------------------------------------------------
+  env:
+    role: traditional
+    database: "off"
+    router_flavor: "traditional_compatible"
+    nginx_worker_processes: "2"
+    proxy_access_log: /dev/stdout
+    admin_access_log: /dev/stdout
+    proxy_error_log: /dev/stderr
+    admin_error_log: /dev/stderr
 
-certificates:
-  enabled: false
-  issuer: ""
-  clusterIssuer: ""
-  proxy:
-    enabled: true
-    issuer: ""
-    clusterIssuer: ""
-    commonName: "app.example"
-    dnsNames: []
   admin:
     enabled: true
-    issuer: ""
-    clusterIssuer: ""
-    commonName: "kong.example"
-    dnsNames: []
+    type: ClusterIP
+    http:
+      enabled: true
+      servicePort: 8001
+      containerPort: 8001
+    tls:
+      enabled: false
+      servicePort: 8444
+      containerPort: 8444
+    ingress:
+      enabled: false
 
-# -----------------------------------------------------------------------------
-# Miscellaneous parameters
-# -----------------------------------------------------------------------------
+  proxy:
+    enabled: true
+    type: ClusterIP
+    labels:
+      enable-metrics: "true"
+    http:
+      enabled: true
+      servicePort: 80
+      containerPort: 8000
+    tls:
+      enabled: true
+      servicePort: 443
+      containerPort: 8443
+    ingress:
+      enabled: false
 
-waitImage:
-  enabled: true
-  pullPolicy: IfNotPresent
+  status:
+    enabled: true
+    http:
+      enabled: true
+      containerPort: 8100
 
-updateStrategy: {}
+  # OpenShift — no fixed UID/GID
+  podSecurityContext:
+    fsGroup: null
 
-resources:
-  limits:
-    cpu: "1"
-    memory: "1Gi"
-  requests:
-    cpu: "500m"
-    memory: "512Mi"
+  containerSecurityContext:
+    runAsUser: null
+    runAsGroup: null
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
 
-initContainerResources: {}
+  readinessProbe:
+    httpGet:
+      path: "/status/ready"
+      port: status
+      scheme: HTTP
+    initialDelaySeconds: 5
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
 
-readinessProbe:
-  httpGet:
-    path: "/status/ready"
-    port: status
-    scheme: HTTP
-  initialDelaySeconds: 5
-  timeoutSeconds: 5
-  periodSeconds: 10
-  successThreshold: 1
-  failureThreshold: 3
+  livenessProbe:
+    httpGet:
+      path: "/status"
+      port: status
+      scheme: HTTP
+    initialDelaySeconds: 5
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
 
-livenessProbe:
-  httpGet:
-    path: "/status"
-    port: status
-    scheme: HTTP
-  initialDelaySeconds: 5
-  timeoutSeconds: 5
-  periodSeconds: 10
-  successThreshold: 1
-  failureThreshold: 3
+  lifecycle:
+    preStop:
+      exec:
+        command:
+          - kong
+          - quit
+          - '--wait=15'
 
-lifecycle:
-  preStop:
-    exec:
-      command:
-        - kong
-        - quit
-        - '--wait=15'
+  terminationGracePeriodSeconds: 30
 
-terminationGracePeriodSeconds: 30
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
 
-tolerations: []
+  replicaCount: 1
 
-nodeSelector: {}
+  serviceMonitor:
+    enabled: true
+    trustCRDsExist: false
+    labels:
+      app.kubernetes.io/component: ai-gateway
 
-podAnnotations: {}
+  ingressController:
+    enabled: false
 
-podLabels:
-  app.kubernetes.io/component: ai-gateway
+  postgresql:
+    enabled: false
 
-replicaCount: 1
+  migrations:
+    preUpgrade: false
+    postUpgrade: false
 
-deploymentAnnotations: {}
+  certificates:
+    enabled: false
 
-autoscaling:
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 5
-  annotations: {}
-  behavior: {}
-  targetCPUUtilizationPercentage: ""
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 80
+  enterprise:
+    enabled: false
 
-podDisruptionBudget:
-  enabled: false
-  unhealthyPodEvictionPolicy: IfHealthyBudget
-
-priorityClassName: ""
-
-securityContext:
-  seccompProfile:
-    type: RuntimeDefault
-
-containerSecurityContext:
-  enabled: false
-
-serviceMonitor:
-  enabled: true
-  trustCRDsExist: false
-  labels:
+  extraLabels:
     app.kubernetes.io/component: ai-gateway
 
-# -----------------------------------------------------------------------------
-# Enterprise parameters (disabled for OSS Kong)
-# -----------------------------------------------------------------------------
+  podLabels:
+    app.kubernetes.io/component: ai-gateway
 
-enterprise:
-  enabled: false
-
-extraConfigMaps: []
-extraSecrets: []
-extraObjects: []
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault

@@ -471,18 +471,15 @@ The `ai-gateways/litemaas/` directory contains configurations for deploying Lite
 - `oauthclient.yaml`: OAuth client configuration
 - `values_oc.yaml`: OpenShift-specific values for LiteLLM deployment
 
-### Kong AI Gateway
-The `ai-gateways/kong/` directory contains configurations for deploying Kong AI Gateway as an alternative API gateway with advanced AI capabilities including prompt engineering, semantic caching, and comprehensive observability.
+### Kong AI Gateway (Standalone)
+The `ai-gateways/kong/` directory contains configurations for deploying Kong Gateway as a standalone API Gateway on OpenShift using the `kong/ingress` Helm chart (KIC disabled — OpenShift's built-in router handles ingress).
 
 #### Components
-- `Chart.yaml`: Helm chart definition
-- `values.yaml`: Default configuration values
-- `values-openshift.yaml`: OpenShift-specific configuration overrides
-- `templates/`: Kubernetes manifest templates
-  - `deployment.yaml`: Kong Gateway deployment
-  - `service.yaml`: Kong Gateway service
-  - `route.yaml`: OpenShift route for external access
-  - `servicemonitor.yaml`: Prometheus ServiceMonitor for metrics collection
+- `values.yaml`: OpenShift-optimized values for `kong/ingress` chart
+  - `controller.enabled: false` — KIC not needed, OpenShift router handles ingress
+  - `gateway`: Kong Gateway (nginx) — handles proxy traffic in DB-less mode
+- `README.md`: Deployment and configuration guide
+- `test-connectivity.sh`: Script to verify the deployment
 
 ## Infrastructure Automation
 
