@@ -64,23 +64,6 @@ admin:
   ingress:
     enabled: false
 
-manager:
-  enabled: true
-  type: ClusterIP
-  http:
-    enabled: true
-    servicePort: 8002
-    containerPort: 8002
-    parameters: []
-  tls:
-    enabled: true
-    servicePort: 8445
-    containerPort: 8445
-    parameters:
-    - http2
-  ingress:
-    enabled: false
-
 status:
   enabled: true
   http:
