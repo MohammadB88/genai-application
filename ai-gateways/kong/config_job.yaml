@@ -12,7 +12,7 @@ spec:
           image: kong/deck:v1.60.0
           command: ["sh", "-c"]
           args:
-            - deck gateway sync /config/kong.yaml --kong-addr http://kong-kong-admin:8001
+            - deck gateway sync /config/test_service_route.yaml --kong-addr http://kong-kong-admin:8001
           volumeMounts:
             - name: config
               mountPath: /config
