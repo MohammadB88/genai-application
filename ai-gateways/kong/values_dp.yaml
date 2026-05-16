@@ -121,13 +121,7 @@ secretVolumes:
 migrations:
   preUpgrade: false
   postUpgrade: false
-  annotations:
-    sidecar.istio.io/inject: "false"
-  jobAnnotations: {}
-  backoffLimit: {}
-  ttlSecondsAfterFinished: ""
-  resources: {}
-
+  
 dblessConfig:
   configMap: ""
   secret: ""
