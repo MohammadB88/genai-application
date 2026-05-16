@@ -21,7 +21,7 @@ echo "======================================"
 echo " 2. CURRENT SERVICES"
 echo "======================================"
 
-oc exec deploy/kong-kong -- \
+oc run debug --rm -it --image=curlimages/curl  -- \
   curl -s http://kong-kong-admin:8001/services | jq '.data[].name' || true
 
 echo ""
@@ -29,7 +29,7 @@ echo "======================================"
 echo " 3. CURRENT ROUTES"
 echo "======================================"
 
-oc exec deploy/kong-kong -- \
+oc run debug --rm -it --image=curlimages/curl  -- \
   curl -s http://kong-kong-admin:8001/routes | jq '.data[].name' || true
 
 echo ""
@@ -68,7 +68,7 @@ echo "======================================"
 echo " 7. POST-DEPLOY SERVICES"
 echo "======================================"
 
-oc exec deploy/kong-kong -- \
+oc run debug --rm -it --image=curlimages/curl  -- \
   curl -s http://kong-kong-admin:8001/services | jq '.data[].name' || true
 
 echo ""
@@ -76,7 +76,7 @@ echo "======================================"
 echo " 8. POST-DEPLOY ROUTES"
 echo "======================================"
 
-oc exec deploy/kong-kong -- \
+oc run debug --rm -it --image=curlimages/curl  -- \
   curl -s http://kong-kong-admin:8001/routes | jq '.data[].name' || true
 
 echo ""
