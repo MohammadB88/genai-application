@@ -25,7 +25,7 @@ env:
   admin_access_log: /dev/stdout
   proxy_error_log: /dev/stderr
   admin_error_log: /dev/stderr
-  admin_gui_listen: "0.0.0.0:8002, [::]:8002, 0.0.0.0:8445 http2 ssl, [::]:8445 http2 ssl"
+  admin_gui_listen: "0.0.0.0:8001, [::]:8001"
   prefix: /kong_prefix/
   cluster_cert: /etc/secrets/kong-cluster-cert/tls.crt
   cluster_cert_key: /etc/secrets/kong-cluster-cert/tls.key
