@@ -2,7 +2,7 @@ _format_version: "3.0"
 
 services:
   - name: granite
-    url: http://granite.kong.svc.cluster.local:8080
+    url: http://granite-3-1-8b-instruct-predictor.ic-shared-llm.svc.cluster.local:8080
     routes:
       - name: granite-route
         paths:

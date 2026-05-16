@@ -14,28 +14,38 @@ echo "======================================"
 oc create configmap "$CONFIGMAP" \
   --from-file="$FILE" \
   -n "$NAMESPACE" \
-  --dry-run=client -o yaml | oc apply -f -
+  --dry-run=client -o yaml | oc apply -f -echo "Waiting for debug pod..."
 
 echo ""
 echo "======================================"
-echo " 2. CURRENT SERVICES"
+echo "Create persistent debug pod (sleep 10 min)"
 echo "======================================"
 
-oc run debug --rm -it --image=curlimages/curl  -- \
-  curl -s http://kong-kong-admin:8001/services | jq '.data[].name' || true
+oc create pod $DEBUG_POD --image=curlimages/curl:latest -n "$NAMESPACE" --restart=Never -- sleep 600 || true
 
-echo ""
-echo "======================================"
-echo " 3. CURRENT ROUTES"
-echo "======================================"
-
-oc run debug --rm -it --image=curlimages/curl  -- \
-  curl -s http://kong-kong-admin:8001/routes | jq '.data[].name' || true
+oc wait --for=condition=Ready pod/$DEBUG_POD -n "$NAMESPACE" --timeout=120s
 
 echo ""
 echo "======================================"
-echo " 4. APPLY NEW RULE?"
+echo " 3. CURRENT SERVICES (inside debug pod)"
 echo "======================================"
+
+oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
+  curl -s http://kong-kong-admin:8001/services
+
+echo ""
+echo "======================================"
+echo " 4. CURRENT ROUTES (inside debug pod)"
+echo "======================================"
+
+oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
+  curl -s http://kong-kong-admin:8001/routes
+
+echo ""
+echo "======================================"
+echo " 5. APPLY NEW RULE?"
+echo "======================================"
+
 read -p "Do you want to apply the new Kong config via decK Job? (y/n): " CONFIRM
 
 if [[ "$CONFIRM" != "y" ]]; then
@@ -45,39 +55,37 @@ fi
 
 echo ""
 echo "======================================"
-echo " 5. RESTART JOB (force re-run)"
+echo " 6. RESTART JOB"
 echo "======================================"
 
 oc delete job "$JOB_NAME" -n "$NAMESPACE" --ignore-not-found=true
-
 oc apply -f "$JOB_FILE" -n "$NAMESPACE"
 
-echo ""
-echo "Waiting for job to complete..."
+echo "Waiting for job..."
 oc wait --for=condition=complete job/"$JOB_NAME" -n "$NAMESPACE" --timeout=180s || true
 
 echo ""
 echo "======================================"
-echo " 6. JOB LOGS"
+echo " 7. JOB LOGS"
 echo "======================================"
 
 oc logs job/"$JOB_NAME" -n "$NAMESPACE"
 
 echo ""
 echo "======================================"
-echo " 7. POST-DEPLOY SERVICES"
+echo " 8. POST-DEPLOY SERVICES"
 echo "======================================"
 
-oc run debug --rm -it --image=curlimages/curl  -- \
-  curl -s http://kong-kong-admin:8001/services | jq '.data[].name' || true
+oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
+  curl -s http://kong-kong-admin:8001/services
 
 echo ""
 echo "======================================"
-echo " 8. POST-DEPLOY ROUTES"
+echo " 9. POST-DEPLOY ROUTES"
 echo "======================================"
 
-oc run debug --rm -it --image=curlimages/curl  -- \
-  curl -s http://kong-kong-admin:8001/routes | jq '.data[].name' || true
+oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
+  curl -s http://kong-kong-admin:8001/routes
 
 echo ""
 echo "DONE"
