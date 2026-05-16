@@ -31,8 +31,8 @@ env:
 
 envFrom: []
 
-extraLabels:
-  app.kubernetes.io/component: ai-gateway-cp
+# extraLabels:
+#   app.kubernetes.io/component: ai-gateway-cp
 
 image:
   repository: kong
@@ -226,8 +226,8 @@ nodeSelector: {}
 
 podAnnotations: {}
 
-podLabels:
-  app.kubernetes.io/component: ai-gateway-cp
+# podLabels:
+#   app.kubernetes.io/component: ai-gateway-cp
 
 replicaCount: 1
 
@@ -264,8 +264,8 @@ containerSecurityContext:
 serviceMonitor:
   enabled: true
   trustCRDsExist: false
-  labels:
-    app.kubernetes.io/component: ai-gateway-cp
+  # labels:
+    # app.kubernetes.io/component: ai-gateway-cp
 
 enterprise:
   enabled: false
