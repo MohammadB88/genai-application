@@ -36,6 +36,86 @@ kubectl create secret tls kong-cluster-cert \
 # Clean up temp cert files
 rm -f /tmp/kong-cluster.key /tmp/kong-cluster.crt
 
+# Deploy Postgres for Control Plane
+echo "=============================================="
+echo "Deploying Postgres for Control Plane..."
+echo "=============================================="
+PG_SERVICE="${CP_RELEASE}-postgresql"
+
+# Create Postgres PVC
+cat <<EOF | kubectl apply -n "${NAMESPACE}" -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "${PG_SERVICE}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+EOF
+
+# Create Postgres Deployment
+cat <<EOF | kubectl apply -n "${NAMESPACE}" -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "${PG_SERVICE}"
+  labels:
+    app: "${PG_SERVICE}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "${PG_SERVICE}"
+  template:
+    metadata:
+      labels:
+        app: "${PG_SERVICE}"
+    spec:
+      containers:
+      - name: postgres
+        image: registry.redhat.io/rhel8/postgresql-13:latest
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRESQL_USER
+          value: "kong"
+        - name: POSTGRESQL_PASSWORD
+          value: "kong"
+        - name: POSTGRESQL_DATABASE
+          value: "kong"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/pgsql/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: "${PG_SERVICE}"
+EOF
+
+# Create Postgres Service
+cat <<EOF | kubectl apply -n "${NAMESPACE}" -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: "${PG_SERVICE}"
+  labels:
+    app: "${PG_SERVICE}"
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: "${PG_SERVICE}"
+EOF
+
+echo "Waiting for Postgres to be ready..."
+kubectl wait --for=condition=available deployment/"${PG_SERVICE}" -n "${NAMESPACE}" --timeout=3m
+
+PG_HOST="${PG_SERVICE}.${NAMESPACE}.svc.cluster.local"
+
 # Add Kong Helm repository
 echo "Adding Kong Helm repository..."
 helm repo add kong https://charts.konghq.com
@@ -48,6 +128,11 @@ echo "=============================================="
 helm upgrade --install "${CP_RELEASE}" kong/kong \
   --namespace "${NAMESPACE}" \
   -f ai-gateways/kong/values_cp.yaml \
+  --set env.pg_host="value=${PG_HOST}" \
+  --set env.pg_port="value=5432" \
+  --set env.pg_user="value=kong" \
+  --set env.pg_password="value=kong" \
+  --set env.pg_database="value=kong" \
   --wait --timeout 5m
 
 # Update SCC policy for CP service account
