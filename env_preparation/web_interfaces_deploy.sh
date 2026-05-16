@@ -147,10 +147,10 @@ wait_for_deployments_ready() {
     fi
     
     # Still waiting - show status
-    printf -v remaining_time '%d seconds remaining\n' $((($max_attempts - $attempt) * 2))
+    printf -v remaining_time '%d seconds remaining\n' $((($max_attempts - $attempt) * 10))
     echo -e "${YELLOW}[$attempt/$max_attempts] Checking deployments... | $remaining_time${NC}"
     
-    sleep 2
+    sleep 10
     ((attempt++))
   done
   
