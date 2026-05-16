@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =========================
+# CONFIG (edit if needed)
+# =========================
+NAMESPACE="${NAMESPACE:-postgres}"
+LABEL_SELECTOR="${LABEL_SELECTOR:-app=postgres}"
+
+DB_USER="${DB_USER:-kong}"
+DB_NAME="${DB_NAME:-kong}"
+
+# =========================
+# FIND POSTGRES POD
+# =========================
+POD=$(oc get pods -n "$NAMESPACE" -l "$LABEL_SELECTOR" \
+  -o jsonpath="{.items[0].metadata.name}")
+
+if [[ -z "$POD" ]]; then
+  echo "[ERROR] No PostgreSQL pod found in namespace $NAMESPACE"
+  exit 1
+fi
+
+echo "[INFO] Using pod: $POD"
+
+# =========================
+# RUN TEST QUERY
+# =========================
+echo "[INFO] Running test query..."
+
+oc exec -n "$NAMESPACE" "$POD" -- \
+  psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;"
+#   psql -U "$DB_USER" -d "$DB_NAME" -c "
+#     SELECT
+#     version(),
+#     current_user,
+#     current_database();
+#     "
+
+echo "[OK] PostgreSQL is working"
