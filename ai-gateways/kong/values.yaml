@@ -95,9 +95,12 @@ gateway:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
 
+  # Use /status instead of /status/ready for readiness.
+  # /status/ready requires at least one service/route to pass, but in DB-less
+  # mode config is pushed at runtime via Admin API after the pod is ready.
   readinessProbe:
     httpGet:
-      path: "/status/ready"
+      path: "/status"
       port: status
       scheme: HTTP
     initialDelaySeconds: 5
@@ -143,12 +146,15 @@ gateway:
     # labels:
     #   app.kubernetes.io/component: ai-gateway
 
-  # Minimal declarative config so Kong reports "ready" on startup.
-  # Use the Admin API /config endpoint to push actual routes/services at runtime.
+  # Initial declarative config. Required in DB-less mode so Kong considers
+  # itself "ready" (a config must be loaded before /status/ready passes).
+  # Push actual routes/services at runtime via POST /config on the Admin API.
   dblessConfig:
     config: |
       _format_version: "3.0"
       _transform: true
+      services: []
+      routes: []
 
   ingressController:
     enabled: false
