@@ -228,7 +228,7 @@ _transform: true
 #   - Runs as a non-root, unprivileged user (UID 26 / postgres)
 #   - Natively compatible with OpenShift's restricted SCC — no SCC grants needed
 #   - Configured entirely via environment variables
-#   - Data stored at /var/lib/pgsql/data (mounted from the PVC)
+#   - Data stored at /var/lib/pgsql/data/userdata (mounted from the PVC)
 write_postgres_manifest() {
   step "Writing PostgreSQL manifest (registry.redhat.io/rhel9/postgresql-${PG_VERSION})"
 
@@ -328,7 +328,7 @@ spec:
           # This path is owned by the 'postgres' user (UID 26) inside the image.
           volumeMounts:
             - name: pgdata
-              mountPath: /var/lib/pgsql/data
+              mountPath: /var/lib/pgsql/data/userdata
 
           # Readiness: wait until PostgreSQL is actually accepting connections
           readinessProbe:
