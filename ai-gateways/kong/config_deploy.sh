@@ -47,7 +47,12 @@ echo " 3. CURRENT SERVICES (inside debug pod)"
 echo "======================================"
 
 oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
-  curl -s http://kong-kong-admin:8001/services
+  curl -s http://kong-kong-admin:8001/services | jq -r '
+  "SERVICES",
+  (.data[] |
+    "- " + .name + " → " + .host + ":" + (.port|tostring)
+  )
+'
 
 echo ""
 echo "======================================"
@@ -55,7 +60,13 @@ echo " 4. CURRENT ROUTES (inside debug pod)"
 echo "======================================"
 
 oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
-  curl -s http://kong-kong-admin:8001/routes
+  curl -s http://kong-kong-admin:8001/routes | jq -r '
+  "ROUTES",
+  (.data[] |
+    "- " + (.name // "no-name") +
+    " (/"+ (.paths[0] // "") + ") → service=" + (.service.id // "unknown")
+  )
+'
 
 echo ""
 echo "======================================"
@@ -93,7 +104,12 @@ echo " 8. POST-DEPLOY SERVICES"
 echo "======================================"
 
 oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
-  curl -s http://kong-kong-admin:8001/services
+  curl -s http://kong-kong-admin:8001/services | jq -r '
+  "SERVICES",
+  (.data[] |
+    "- " + .name + " → " + .host + ":" + (.port|tostring)
+  )
+'
 
 echo ""
 echo "======================================"
@@ -101,7 +117,12 @@ echo " 9. POST-DEPLOY ROUTES"
 echo "======================================"
 
 oc exec -n "$NAMESPACE" "$DEBUG_POD" -- \
-  curl -s http://kong-kong-admin:8001/routes
-
+  curl -s http://kong-kong-admin:8001/routes | jq -r '
+  "ROUTES",
+  (.data[] |
+    "- " + (.name // "no-name") +
+    " (/"+ (.paths[0] // "") + ") → service=" + (.service.id // "unknown")
+  )
+'
 echo ""
 echo "DONE"
