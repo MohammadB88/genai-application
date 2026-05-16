@@ -119,8 +119,8 @@ secretVolumes:
 - kong-cluster-cert
 
 migrations:
-  preUpgrade: true
-  postUpgrade: true
+  preUpgrade: false
+  postUpgrade: false
   annotations:
     sidecar.istio.io/inject: "false"
   jobAnnotations: {}
