@@ -1,98 +1,48 @@
-# Kong Gateway OSS – OpenShift values.yaml
-# Helm chart: kong/kong  (https://github.com/Kong/charts)
-
 image:
   repository: kong
-  tag: "3.7"          # pin to a specific release you've tested
-  pullPolicy: IfNotPresent
+  tag: "3.7"
 
-# ── Deployment ────────────────────────────────────────────────────────────────
-replicaCount: 1
-
-# OpenShift runs containers as an arbitrary UID; drop the securityContext
-# overrides so the restricted SCC is satisfied.
-securityContext: {}
-containerSecurityContext: {}
-
-# ── Database ──────────────────────────────────────────────────────────────────
 env:
   database: postgres
+
+  # External PostgreSQL (your cluster)
   pg_host: postgres.postgres.svc.cluster.local
   pg_port: "5432"
   pg_database: kong
   pg_user: kong
-  pg_password:
-    valueFrom:
-      secretKeyRef:
-        name: kong-postgres-secret   # create this secret before installing
-        key: password
+  pg_password: changeme   # <-- match your Postgres secret
 
-  # ── Listeners – bind to 0.0.0.0 so OpenShift Routes can reach the pods ──────
-  admin_listen: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
-  admin_gui_listen: "0.0.0.0:8002, 0.0.0.0:8445 ssl"
-  proxy_listen: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+  # REQUIRED for OpenShift / external access
+  admin_listen: "0.0.0.0:8001"
+  admin_gui_listen: "0.0.0.0:8002"
 
-  # Kong Manager needs to know the public URL of the Admin API
-  admin_gui_api_url: ""          # set at install time, see bash script below
-  admin_api_uri: ""              # same value – older chart versions use this key
+  # Logs to stdout (OpenShift best practice)
+  proxy_access_log: /dev/stdout
+  proxy_error_log: /dev/stderr
+  admin_access_log: /dev/stdout
+  admin_error_log: /dev/stderr
 
-# ── Services ──────────────────────────────────────────────────────────────────
-# Use ClusterIP everywhere; OpenShift Routes handle external exposure.
+ingressController:
+  enabled: true
+  installCRDs: false
+
 admin:
-  enabled: true
-  type: ClusterIP
-  port: 8001
-  annotations: {}
-
-adminGui:
-  enabled: true
-  type: ClusterIP
-  port: 8002
-  annotations: {}
-
-proxy:
   enabled: true
   type: ClusterIP
   http:
     enabled: true
-    servicePort: 80
-    containerPort: 8000
-  tls:
+
+manager:
+  enabled: true
+  type: ClusterIP
+  http:
     enabled: true
-    servicePort: 443
-    containerPort: 8443
-  annotations: {}
 
-# ── Ingress controller (disabled – we use Routes instead) ─────────────────────
-ingressController:
-  enabled: false
+proxy:
+  enabled: true
+  type: ClusterIP
 
-# ── DB migrations (run as a Job before the main deployment) ───────────────────
-migrations:
-  preUpgrade: true
-  postUpgrade: true
+postgresql:
+  enabled: false   # IMPORTANT: external DB only
 
-# ── Pod settings ──────────────────────────────────────────────────────────────
-resources:
-  requests:
-    cpu: 250m
-    memory: 256Mi
-  limits:
-    cpu: 1000m
-    memory: 512Mi
-
-readinessProbe:
-  httpGet:
-    path: /status
-    port: 8001
-    scheme: HTTP
-  initialDelaySeconds: 15
-  periodSeconds: 10
-
-livenessProbe:
-  httpGet:
-    path: /status
-    port: 8001
-    scheme: HTTP
-  initialDelaySeconds: 30
-  periodSeconds: 30
+replicaCount: 1
