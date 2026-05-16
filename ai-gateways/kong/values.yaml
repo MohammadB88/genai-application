@@ -35,7 +35,7 @@ gateway:
 
   image:
     repository: kong/kong-gateway
-    tag: "3.9.0-ubi"
+    tag: "3.9.0.0"
     pullPolicy: IfNotPresent
 
   env:
@@ -142,6 +142,13 @@ gateway:
     trustCRDsExist: false
     # labels:
     #   app.kubernetes.io/component: ai-gateway
+
+  # Minimal declarative config so Kong reports "ready" on startup.
+  # Use the Admin API /config endpoint to push actual routes/services at runtime.
+  dblessConfig:
+    config: |
+      _format_version: "3.0"
+      _transform: true
 
   ingressController:
     enabled: false
