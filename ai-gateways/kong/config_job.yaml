@@ -1,3 +1,29 @@
+---
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: kong-deck-sync
+#   namespace: kong
+# spec:
+#   template:
+#     spec:
+#       restartPolicy: Never
+#       containers:
+#         - name: deck
+#           image: kong/deck:v1.60.0
+#           command: ["sh", "-c"]
+#           args:
+#             - deck gateway sync /config/test_service_route.yaml --kong-addr http://kong-kong-admin:8001
+#           volumeMounts:
+#             - name: config
+#               mountPath: /config
+#           env:
+#             - name: DECK_KONG_ADDR
+#               value: "http://kong-kong-admin:8001"
+#       volumes:
+#         - name: config
+#           configMap:
+#             name: kong-deck-config
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,7 +38,7 @@ spec:
           image: kong/deck:v1.60.0
           command: ["sh", "-c"]
           args:
-            - deck gateway sync /config/test_service_route.yaml --kong-addr http://kong-kong-admin:8001
+            - deck gateway apply /config/test_service_route.yaml --kong-addr http://kong-kong-admin:8001
           volumeMounts:
             - name: config
               mountPath: /config
