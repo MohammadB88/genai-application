@@ -138,13 +138,6 @@ ingressController:
 
 postgresql:
   enabled: false
-    securityContext:
-      runAsUser: "auto"
-  primary:
-    containerSecurityContext:
-      enabled: false
-    podSecurityContext:
-      enabled: false
 
 certificates:
   enabled: false
@@ -164,7 +157,7 @@ certificates:
     dnsNames: []
 
 waitImage:
-  enabled: true
+  enabled: false
   pullPolicy: IfNotPresent
 
 updateStrategy: {}
