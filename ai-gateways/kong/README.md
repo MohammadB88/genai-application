@@ -26,10 +26,14 @@ ai-gateways/kong/
 
 ### Quick Deploy
 
-Use the provided script to deploy both CP and DP:
+Use the provided scripts to deploy and clean up both CP and DP:
 
 ```bash
+# Deploy
 ./env_preparation/kong_deploy.sh [namespace] [cp-release-name] [dp-release-name]
+
+# Cleanup
+./env_preparation/kong_cleanup.sh [namespace] [cp-release-name] [dp-release-name]
 ```
 
 Defaults: `namespace=kong`, `cp-release-name=kong-cp`, `dp-release-name=kong-dp`
@@ -37,6 +41,9 @@ Defaults: `namespace=kong`, `cp-release-name=kong-cp`, `dp-release-name=kong-dp`
 ```bash
 # Deploy with defaults
 ./env_preparation/kong_deploy.sh
+
+# Cleanup with defaults
+./env_preparation/kong_cleanup.sh
 
 # Deploy with custom names
 ./env_preparation/kong_deploy.sh my-namespace my-cp my-dp
@@ -140,7 +147,8 @@ curl -s https://$(oc get route kong-cp-admin -n kong -o jsonpath='{.spec.host}')
 - `proxy.enabled: false` - CP does not handle proxy traffic
 - `admin.enabled: true` - Admin API for configuration
 - `secretVolumes: [kong-cluster-cert]` - Mounts the cluster TLS certificate
-- Database-backed mode for persisting configuration
+- `fullnameOverride: "kong-cp"` - Predictable resource naming
+- Custom labels (`extraLabels`, `podLabels`) commented out to avoid selector mismatches
 
 ### Data Plane (`values_dp.yaml`)
 
@@ -151,6 +159,8 @@ curl -s https://$(oc get route kong-cp-admin -n kong -o jsonpath='{.spec.host}')
 - `admin.enabled: false` - Admin API disabled on DP
 - `migrations.preUpgrade/postUpgrade: false` - Migrations run on CP only
 - `waitImage.enabled: false` - No DB dependency on DP
+- `fullnameOverride: "kong-dp"` - Predictable resource naming
+- Custom labels (`extraLabels`, `podLabels`) commented out to avoid selector mismatches
 
 ## Accessing Kong
 
