@@ -140,8 +140,8 @@ gateway:
   serviceMonitor:
     enabled: true
     trustCRDsExist: false
-    labels:
-      app.kubernetes.io/component: ai-gateway
+    # labels:
+    #   app.kubernetes.io/component: ai-gateway
 
   ingressController:
     enabled: false
@@ -159,11 +159,11 @@ gateway:
   enterprise:
     enabled: false
 
-  extraLabels:
-    app.kubernetes.io/component: ai-gateway
+  # extraLabels:
+  #   app.kubernetes.io/component: ai-gateway
 
-  podLabels:
-    app.kubernetes.io/component: ai-gateway
+  # podLabels:
+  #   app.kubernetes.io/component: ai-gateway
 
   securityContext:
     seccompProfile:
