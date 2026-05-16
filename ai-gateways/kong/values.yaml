@@ -46,3 +46,19 @@ postgresql:
   enabled: false   # IMPORTANT: external DB only
 
 replicaCount: 1
+
+# ============================
+# IMPORTANT: OpenShift fix
+# ============================
+securityContext:
+  runAsNonRoot: true
+  runAsUser: null
+  runAsGroup: null
+  fsGroup: null
+
+containerSecurityContext:
+  runAsUser: null
+  runAsGroup: null
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
