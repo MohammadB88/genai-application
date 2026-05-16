@@ -10,7 +10,7 @@ env:
   pg_port: "5432"
   pg_database: kong
   pg_user: kong
-  pg_password: changeme   # <-- match your Postgres secret
+  pg_password: 123456abc   # <-- match your Postgres secret
 
   # REQUIRED for OpenShift / external access
   admin_listen: "0.0.0.0:8001"
