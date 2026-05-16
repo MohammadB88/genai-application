@@ -3,7 +3,7 @@ set -euo pipefail
 
 NAMESPACE="kong"
 RELEASE="kong"
-VALUES_FILE="kong-values.yaml"
+VALUES_FILE="values.yaml"
 
 echo "==> Create namespace"
 oc new-project "$NAMESPACE" 2>/dev/null || oc project "$NAMESPACE"
