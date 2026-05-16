@@ -307,7 +307,7 @@ spec:
       labels:
         app: kong-postgres
     securityContext:
-      fsGroup: 26
+      runAsNonRoot: true
     spec:
       containers:
         - name: postgresql
@@ -330,7 +330,7 @@ spec:
           # This path is owned by the 'postgres' user (UID 26) inside the image.
           volumeMounts:
             - name: pgdata
-              mountPath: /var/lib/pgsql/data/userdata
+              mountPath: /var/lib/pgsql/data
 
           # Readiness: wait until PostgreSQL is actually accepting connections
           readinessProbe:
