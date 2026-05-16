@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: deck
-          image: kong/deck:1.40.0
+          image: kong/deck:v1.60.0
           command: ["sh", "-c"]
           args:
             - deck gateway sync /config/kong.yaml --kong-addr http://kong-kong-admin:8001
