@@ -26,6 +26,7 @@ deploy() {
   local env_file=$1
   set -a
   source config/global.env
+  source config/nim_vllm.env
   source "$env_file"
   set +a
 

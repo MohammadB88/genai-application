@@ -17,6 +17,27 @@ fi
 
 AUTH_HEADER="Authorization: Bearer ${GRAFANA_TOKEN}"
 
+# Load optional provisioning defaults
+if [[ -f config/global.env ]]; then
+  source config/global.env
+fi
+
+# Collect alert group names from topic-specific config files.
+# Groups are not separate Grafana resources; they are metadata on alert rules.
+ALERT_GROUPS=()
+for cfg in config/*.env; do
+  [[ "$cfg" == "config/global.env" ]] && continue
+  if group=$(grep -E '^ALERT_GROUP=' "$cfg" | tail -n1 | cut -d= -f2- | sed 's/^"//;s/"$//'); then
+    if [[ -n "$group" ]]; then
+      ALERT_GROUPS+=("$group")
+    fi
+  fi
+done
+if [[ ${#ALERT_GROUPS[@]} -gt 0 ]]; then
+  IFS=$'\n' ALERT_GROUPS=( $(printf '%s\n' "${ALERT_GROUPS[@]}" | sort -u) )
+  unset IFS
+fi
+
 # **********************************
 # Options
 # **********************************
@@ -54,6 +75,10 @@ fi
 # **********************************
 if [[ "$DELETE_RULES" == true ]]; then
   echo ""
+  if [[ ${#ALERT_GROUPS[@]} -gt 0 ]]; then
+    echo "Detected alert groups from config files: ${ALERT_GROUPS[*]}"
+    echo "Deleting alert rules removes these groups automatically because rule groups are metadata on alerts."
+  fi
   echo "Fetching all alert rules..."
 
   RULES=$(curl -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
@@ -90,6 +115,7 @@ if [[ "$DELETE_RULES" == true ]]; then
     echo ""
     echo "Alert rules processing complete."
   fi
+
 fi
 
 # **********************************
