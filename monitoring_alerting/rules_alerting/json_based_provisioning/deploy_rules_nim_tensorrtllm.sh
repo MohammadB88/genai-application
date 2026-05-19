@@ -82,7 +82,7 @@ deploy() {
 }
  
 if [[ "$RULE_ENV" == "--all" ]]; then
-  for env_file in rules/nim-tensortllm/*.env; do
+  for env_file in rules/nim-tensorrtllm/*.env; do
     deploy "$env_file"
   done
 else
