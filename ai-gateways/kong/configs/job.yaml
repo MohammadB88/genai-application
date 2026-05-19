@@ -1,0 +1,53 @@
+
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: deck-sync
+
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: deck
+
+          image: kong/deck:latest
+
+          env:
+            - name: DECK_KONG_ADDR
+              value: http://kong-admin.kong.svc.cluster.local:8001
+
+          command:
+            - /bin/sh
+            - -c
+
+          args:
+            - |
+              mkdir -p /tmp/kong
+
+              cp /config/* /tmp/kong/
+
+              deck file merge \
+                /tmp/kong/kong-base.yaml \
+                /tmp/kong/users.yaml \
+                /tmp/kong/users-route.yaml \
+                /tmp/kong/rate-limit.yaml \
+                /tmp/kong/demo-user.yaml \
+                -o /tmp/kong/final.yaml
+
+              echo "VALIDATING..."
+              deck file validate /tmp/kong/final.yaml
+
+              echo "SYNCING..."
+              deck gateway sync /tmp/kong/final.yaml --yes
+
+          volumeMounts:
+            - name: kong-config
+              mountPath: /config
+
+      volumes:
+        - name: kong-config
+          configMap:
+            name: kong-deck-files

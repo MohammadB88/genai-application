@@ -1,0 +1,5 @@
+consumers:
+  - username: demo-user
+
+    keyauth_credentials:
+      - key: my-secret-api-key

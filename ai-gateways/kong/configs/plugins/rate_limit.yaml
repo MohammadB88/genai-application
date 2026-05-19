@@ -1,0 +1,8 @@
+plugins:
+  - name: rate-limiting
+
+    service: user-service
+
+    config:
+      minute: 100
+      policy: local

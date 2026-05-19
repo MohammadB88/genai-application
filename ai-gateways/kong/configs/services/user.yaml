@@ -1,0 +1,3 @@
+services:
+  - name: user-service
+    url: http://user-service:8080

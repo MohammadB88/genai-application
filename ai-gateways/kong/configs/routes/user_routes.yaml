@@ -1,0 +1,6 @@
+routes:
+  - name: user-route
+    service: user-service
+
+    paths:
+      - /users

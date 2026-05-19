@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - job.yaml
+
+configMapGenerator:
+  - name: kong-deck-files
+
+    files:
+      - configs/kong-base.yaml
+      - configs/services/users.yaml
+      - configs/routes/users-route.yaml
+      - configs/plugins/rate-limit.yaml
+      - configs/consumers/demo-user.yaml
+
+generatorOptions:
+  disableNameSuffixHash: false
