@@ -1,7 +1,0 @@
-# AIPerf
-
-# Run Convertor
-python convert_prompts.py prompt.json prompts.jsonl 
-
-# Optional
-Temperatur can be added in the test run: --extra-inputs temperature:0.7
