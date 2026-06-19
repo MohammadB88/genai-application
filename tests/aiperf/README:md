@@ -4,4 +4,4 @@
 python convert_prompts.py prompt.json prompts.jsonl 
 
 # Optional
-python convert_prompts.py prompt.json prompts.jsonl --extra-inputs temperature:0.7
+Temperatur can be added in the test run: --extra-inputs temperature:0.7
