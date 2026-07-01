@@ -13,3 +13,10 @@ MODEL=my-model URL=http://localhost:8000 ./run_aiperf_sustained.sh
 # Optional
 Temperatur can be added in the test run: --extra-inputs temperature:0.7
 
+
+## Metrics
+
+- Time to First Tokens
+- Inter Token Latancy
+- Total Tokens generated per Seconds
+- Transactions Per Second (TPS) - Measures system throughput - How many complete processes has happend?
