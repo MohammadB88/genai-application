@@ -1,142 +1,92 @@
-# 🚀 GenAI Application Platform
+# GenAI Application Platform
 
-A comprehensive platform for deploying and managing Generative AI applications on OpenShift, featuring multiple model serving runtimes, vector databases, object storage, API gateways, web interfaces, monitoring, and testing suites.
+A comprehensive platform for deploying and managing Generative AI applications on OpenShift, featuring multiple model serving runtimes, vector databases, object storage, API gateways, web interfaces, monitoring, and load testing.
 
-## 📋 Overview
+## Features
 
-This project provides a complete, production-ready infrastructure for deploying Generative AI applications on OpenShift. It includes environment preparation, multiple LLM serving backends, vector databases for embeddings, S3-compatible storage, API gateways for unified access, user-friendly GUIs, comprehensive monitoring stacks, and extensive load/performance testing capabilities.
+- **Multiple LLM Backends**: Ollama (CPU), vLLM (CPU/GPU), NVIDIA NIM (GPU)
+- **Vector Database**: Milvus for embeddings and similarity search
+- **Object Storage**: MinIO S3-compatible storage
+- **API Gateways**: LiteLLM and Kong for unified model access
+- **Web GUIs**: AnythingLLM and Open WebUI for document management and chat
+- **Monitoring**: Grafana dashboards + Prometheus metrics/alerting
+- **Load Testing**: k6-based test suite (smoke, stress, spike, soak, breakpoint)
+- **GitOps**: ArgoCD for continuous deployment
 
-<div align="center">
-  <img src="docs/images/logo-genai-application-platform.png" alt="GenAI Platform Architecture" width="350">
-</div>
+## Prerequisites
 
-## ✨ Features
+- OpenShift 4.x+ cluster
+- `oc` or `kubectl` configured
+- Sufficient storage (PVCs) and compute (CPU/GPU nodes as needed)
+- NGC API key for NVIDIA NIM deployments
 
-- **Environment Preparation**: Automated setup and cleanup scripts for OpenShift environments
-- **GitOps Integration**: ArgoCD configurations for continuous deployment
-- **Multiple LLM Backends**: Support for Ollama (CPU), vLLM (CPU/GPU), and NVIDIA NIM (GPU)
-- **Vector Databases**: Milvus for high-performance vector similarity search
-- **Object Storage**: MinIO S3-compatible storage for models and data
-- **API Gateways**: LiteLLM for unified model API access
-- **Web GUIs**: AnythingLLM and OpenWebUI for intuitive AI interaction and document management
-- **Monitoring Stack**: Grafana dashboards and Prometheus metrics for GPU and model performance
-- **Load Testing**: Comprehensive test suite including smoke, stress, spike, and performance tests
-- **LLM Performance Testing**: Specialized benchmarks for model inference and throughput
-- **Infrastructure Automation**: Scripts for automated deployment and resource management
+## Quick Start
 
-## 🏗️ Architecture Components
+```sh
+# Enable user workload monitoring (required for ServiceMonitors)
+oc -n openshift-monitoring create configmap cluster-monitoring-config \
+  --from-literal=config.yaml='enableUserWorkload: true'
 
-### 🤖 Model Serving Runtimes
-- **Ollama**: Lightweight runtime for CPU-based model serving
-- **vLLM**: High-performance serving runtime with GPU acceleration
-- **NVIDIA NIM**: Optimized microservices for NVIDIA GPU deployments
+# Deploy individual components via scripts
+./env_preparation/argocd_deploy.sh
+./env_preparation/models_deploy.sh
+./env_preparation/monitoring_deploy.sh
+./env_preparation/web_interfaces_deploy.sh
 
-### 🗄️ Vector Databases
-- **Milvus**: Cloud-native vector database for similarity search and embeddings
+# Or deploy via ArgoCD (GitOps)
+kubectl apply -f gitops/appproject.yaml
+kubectl apply -f gitops/root-application.yaml
+```
 
-### 💾 Object Storage
-- **MinIO**: S3-compatible object storage for models, documents, and artifacts
+See `env_preparation/` for per-component deploy/cleanup scripts.
 
-### 🌐 API Gateways
-- **LiteLLM**: Unified API gateway for accessing multiple LLM providers
-
-### 🖥️ User Interfaces
-- **AnythingLLM**: Web-based GUI for document management and AI chat interactions
-- **OpenWebUI**: Alternative web interface for AI model interactions
-
-### 📊 Monitoring & Observability
-- **Grafana**: Dashboards for monitoring GPU usage, model performance, and system metrics
-- **Prometheus**: Metrics collection and alerting system
-
-### 🧪 Testing Infrastructure
-- **Load Testing Suite**: Smoke, stress, spike, and performance tests
-- **LLM Performance Testing**: Specialized benchmarks for model inference and throughput
-- **Benchmarking Tools**: Model performance and throughput testing
-
-### 🚀 GitOps & Automation
-- **ArgoCD Configurations**: GitOps manifests for continuous deployment
-- **Infrastructure Scripts**: Automated setup and cleanup utilities
-
-## 📋 Prerequisites
-
-- **Kubernetes Cluster**: OpenShift 4.x+ (preferred) or vanilla Kubernetes
-- **CLI Tools**: `kubectl` or `oc` installed and configured
-- **Storage**: Sufficient persistent storage for models and data
-- **Compute Resources**: CPU or GPU nodes depending on deployment type
-- **Access**: Cluster admin access for namespace and resource creation
-
-### Optional (for GPU deployments)
-- NVIDIA GPUs with appropriate drivers
-- NGC API key for NVIDIA NIM models
-- NVIDIA Developer Program membership
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 genai-application/
-├── docs/                   # Documentation and images
-│   └── images/            # Documentation images and diagrams
-├── env_preparation/        # Environment setup and cleanup scripts
-├── gitops/                # GitOps configurations (ArgoCD)
-├── models/                # LLM model deployments
-│   ├── nvidia_nim/        # NVIDIA NIM GPU models
-│   ├── ollama/            # Ollama CPU models
-│   └── vllm/              # vLLM CPU/GPU models
-├── monitoring_alerting/   # Monitoring stack and alerting rules
-├── rag_usecase/           # RAG-specific configurations (example use case)
-├── s3_storage/            # S3-compatible storage deployments
-│   └── minio_on_openshift/ # MinIO storage deployment
-├── tests/                 # Testing suites and performance benchmarks
-│   ├── last_und_performance/ # Load and performance tests
-│   └── llm_performance/   # LLM-specific performance testing
-├── vectordb/              # Vector database deployments
-│   └── milvus/            # Milvus vector database
-├── web_interfaces/        # Web GUI deployments
-│   ├── anythingllm/       # AnythingLLM GUI deployment
-│   └── openwebui/         # OpenWebUI interface
-├── gpu_deployment.md      # GPU deployment guide
-├── infra_preparation_auto.sh  # Infrastructure automation script
-├── LICENSE                # Apache 2.0 License
-├── README.md              # This file
-└── ROADMAP.md             # Project roadmap
+├── env_preparation/          # Setup and cleanup scripts
+├── gitops/                   # ArgoCD manifests
+├── models/                   # LLM deployments (ollama, vllm, nvidia_nim)
+├── vectordb/milvus/          # Vector database
+├── s3_storage/minio/         # S3-compatible object storage
+├── databases/postgres/       # PostgreSQL database
+├── ai-gateways/              # LiteLLM and Kong gateways
+├── web_interfaces/           # AnythingLLM, Open WebUI
+├── monitoring_alerting/      # Grafana dashboards + Prometheus rules
+├── tests/last_und_performance/  # k6 load/performance tests
+├── rag_usecase/              # RAG architecture docs
+├── docs/                     # Documentation and diagrams
+└── ROADMAP.md                # Project roadmap
 ```
 
-## 🤝 Contributing
+## RAG Flow
 
-We welcome contributions! Please see our [roadmap](ROADMAP.md) for planned features.
+1. Upload documents via AnythingLLM → 2. Embed via Ollama (`all-minilm:33m`) → 3. Store in Milvus → 4. Query retrieves vectors + LLM → 5. Response with citations
 
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+## LLM Provider Config (AnythingLLM)
 
-### Guidelines
-- Follow Kubernetes best practices for manifests
-- Include documentation for new components
-- Add tests for new functionality
-- Update the roadmap for significant changes
+| Provider | Base URL | Chat Model |
+|---|---|---|
+| Ollama | `http://ollama.model-ollama.svc:11434` | `llama3.2:3b` |
+| vLLM (OpenShift AI) | `<INFERENCE_ENDPOINT>/v1` | configured in OS AI |
+| NVIDIA NIM | `http://<nim-service>.svc:8000/v1` | model-specific |
 
-## 📄 License
+## Key Patterns
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+- **Namespaces**: per-component (`model-ollama`, `milvus`, `k6-operator`), ArgoCD in `llms`
+- **SecurityContext**: `runAsNonRoot: true`, `capabilities.drop: ["ALL"]`
+- **ServiceMonitor**: metrics at `/v1/metrics`, requires `enableUserWorkload: true`
+- **Default creds**: MinIO `minio/minio123`, Milvus `root/Milvus`
+- **Kustomize**: most components have a `kustomization.yaml`
 
-## 🙏 Acknowledgments
+## License
 
-This project builds upon and includes components from:
+Apache 2.0 - see [LICENSE](LICENSE)
+
+## Acknowledgments
+
+This project builds upon components from:
 - [Milvus on OpenShift](https://github.com/rh-aiservices-bu/llm-on-openshift/tree/main/vector-databases/milvus)
 - [AnythingLLM on OpenShift](https://github.com/rh-aiservices-bu/llm-on-openshift/blob/main/llm-clients/anythingllm/)
 - [Ollama and Open WebUI](https://gautam75.medium.com/deploy-ollama-and-open-webui-on-openshift-c88610d3b5c7)
 - [MinIO on OpenShift](https://ai-on-openshift.io/tools-and-applications/minio/minio/)
-
-## 📞 Support
-
-For issues and questions:
-- Check existing [issues](../../issues)
-- Create a new issue with detailed information
-- Review component-specific READMEs for troubleshooting
-
----
-
-**Note**: This platform is optimized for OpenShift clusters and provides a foundation for various Generative AI use cases including RAG, chatbots, content generation, and more. Support for other Kubernetes distributions may require modifications.</content>
-<parameter name="filePath">c:\Users\bahma\Desktop\projects\13_RAG_LLMs\genai-application\README.md
