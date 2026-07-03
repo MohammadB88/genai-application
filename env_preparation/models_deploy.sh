@@ -79,6 +79,35 @@ fi
 echo -e "${GREEN}Selected model: $MODEL_PATH${NC}"
 echo "Model directory: $MODEL_DIR"
 
+# NVIDIA NIM models need NGC API key and docker-registry pull secret
+if [[ "$MODEL_PATH" == nvidia_nim/* ]]; then
+  echo " "
+  echo "**********************"
+  echo -e "${BLUE}=== NVIDIA NIM Model Configuration ===${NC}"
+  read -r -p "Enter your NVIDIA API KEY (NGC): " NVIDIA_API_KEY
+
+  # Update secret.yaml with the provided key
+  SECRET_FILE="$MODEL_DIR/secret.yaml"
+  if [[ -f "$SECRET_FILE" ]]; then
+    sed -i "s/NGC_API_KEY:.*/NGC_API_KEY: $NVIDIA_API_KEY/" "$SECRET_FILE"
+    echo -e "${GREEN}Updated: secret.yaml with NGC_API_KEY${NC}"
+  fi
+
+  # Apply secret.yaml directly so kustomization.yaml stays clean
+  $KUBECTL_CMD apply -f "$SECRET_FILE"
+  echo -e "${GREEN}Applied secret.yaml for ngc-api-key${NC}"
+
+  # Create/apply docker-registry secret for nvcr.io
+  echo -e "${BLUE}Creating docker-registry secret 'nim-pull-secret' for nvcr.io...${NC}"
+  $KUBECTL_CMD create secret docker-registry nim-pull-secret \
+    --docker-server=nvcr.io \
+    --docker-username='$oauthtoken' \
+    --docker-password="$NVIDIA_API_KEY" \
+    -n llms \
+    --dry-run=client -o yaml | $KUBECTL_CMD apply -f -
+  echo -e "${GREEN}Docker-registry secret 'nim-pull-secret' created/updated.${NC}"
+fi
+
 echo " "
 echo "**********************"
 read -r -p "Enter STORAGE_CLASS_NAME (leave blank for default cluster storage): " STORAGE_CLASS_NAME
