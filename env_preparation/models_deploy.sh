@@ -84,7 +84,8 @@ if [[ "$MODEL_PATH" == nvidia_nim/* ]]; then
   echo " "
   echo "**********************"
   echo -e "${BLUE}=== NVIDIA NIM Model Configuration ===${NC}"
-  read -r -p "Enter your NVIDIA API KEY (NGC): " NVIDIA_API_KEY
+  read -r -s -p "Enter your NVIDIA API KEY (NGC): " NVIDIA_API_KEY
+  echo
 
   # Update secret.yaml with the provided key
   SECRET_FILE="$MODEL_DIR/secret.yaml"
@@ -110,8 +111,32 @@ fi
 
 echo " "
 echo "**********************"
-read -r -p "Enter STORAGE_CLASS_NAME (leave blank for default cluster storage): " STORAGE_CLASS_NAME
-# Find all pvc.yaml files in the model directory
+echo -e "${BLUE}=== Available Storage Classes ===${NC}"
+SC_NAMES=()
+while IFS= read -r line; do
+  SC_NAMES+=("$line")
+done < <($KUBECTL_CMD get storageclass -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null || true)
+
+if [[ ${#SC_NAMES[@]} -eq 0 ]]; then
+  echo -e "${YELLOW}No storage classes found. Using cluster default.${NC}"
+  STORAGE_CLASS_NAME=""
+else
+  for i in "${!SC_NAMES[@]}"; do
+    echo "  $((i+1)). ${SC_NAMES[$i]}"
+  done
+  echo "  $((${#SC_NAMES[@]}+1)). Use cluster default (no storageClassName)"
+  echo " "
+  read -r -p "Select storage class by number: " SC_CHOICE
+  if [[ "$SC_CHOICE" =~ ^[0-9]+$ ]] && [[ "$SC_CHOICE" -ge 1 ]] && [[ "$SC_CHOICE" -le ${#SC_NAMES[@]} ]]; then
+    STORAGE_CLASS_NAME="${SC_NAMES[$((SC_CHOICE-1))]}"
+    echo -e "${GREEN}Selected storage class: $STORAGE_CLASS_NAME${NC}"
+  else
+    STORAGE_CLASS_NAME=""
+    echo -e "${YELLOW}Using cluster default storage class.${NC}"
+  fi
+fi
+
+# Apply storage class to PVC manifests
 PVC_FILES=()
 while IFS= read -r f; do
   PVC_FILES+=("$f")
@@ -124,7 +149,7 @@ if [[ -n "${STORAGE_CLASS_NAME:-}" ]]; then
     echo -e "${GREEN}Updated: ${pvc_file#$MODELS_DIR/}${NC}"
   done
 else
-  echo -e "${YELLOW}No storage class provided. Commenting out storageClassName to use cluster default.${NC}"
+  echo -e "${YELLOW}No storage class selected. Commenting out storageClassName to use cluster default.${NC}"
   for pvc_file in "${PVC_FILES[@]}"; do
     sed -i "s/^  storageClassName:.*/#  storageClassName: default/" "$pvc_file"
     echo -e "${GREEN}Cleared: ${pvc_file#$MODELS_DIR/}${NC}"
