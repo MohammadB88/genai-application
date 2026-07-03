@@ -21,6 +21,13 @@ else
   exit 1
 fi
 
+# Ensure llms namespace exists
+if ! $KUBECTL_CMD get namespace llms >/dev/null 2>&1; then
+  echo -e "${YELLOW}Namespace 'llms' not found. Creating it...${NC}"
+  $KUBECTL_CMD create namespace llms
+  echo -e "${GREEN}Namespace 'llms' created.${NC}"
+fi
+
 echo -e "${BLUE}=== Welcome to Model Deployment Helper ===${NC}"
 echo "This script will deploy any model from the models directory using kustomize."
 
@@ -75,24 +82,24 @@ echo "Model directory: $MODEL_DIR"
 echo " "
 echo "**********************"
 read -r -p "Enter STORAGE_CLASS_NAME (leave blank for default cluster storage): " STORAGE_CLASS_NAME
+# Find all pvc.yaml files in the model directory
+PVC_FILES=()
+while IFS= read -r f; do
+  PVC_FILES+=("$f")
+done < <(find "$MODEL_DIR" -name "pvc.yaml" -type f)
+
 if [[ -n "${STORAGE_CLASS_NAME:-}" ]]; then
-  echo -e "${BLUE}=== Substituting STORAGE_CLASS_NAME into PVC manifests ===${NC}"
-  if ! command -v envsubst >/dev/null 2>&1; then
-    echo -e "${RED}Error: envsubst is required to replace STORAGE_CLASS_NAME.${NC}"
-    exit 1
-  fi
-  
-  # Find all pvc.yaml files in the model directory and substitute
-  while IFS= read -r pvc_file; do
-    if [[ -f "$pvc_file" ]]; then
-      export STORAGE_CLASS_NAME
-      envsubst < "$pvc_file" > "$pvc_file.tmp"
-      mv "$pvc_file.tmp" "$pvc_file"
-      echo -e "${GREEN}Updated: $(basename $(dirname "$pvc_file"))/pvc.yaml${NC}"
-    fi
-  done < <(find "$MODEL_DIR" -name "pvc.yaml" -type f)
+  echo -e "${BLUE}=== Setting STORAGE_CLASS_NAME to '${STORAGE_CLASS_NAME}' in PVC manifests ===${NC}"
+  for pvc_file in "${PVC_FILES[@]}"; do
+    sed -i "s/^  storageClassName:.*/  storageClassName: $STORAGE_CLASS_NAME/" "$pvc_file"
+    echo -e "${GREEN}Updated: ${pvc_file#$MODELS_DIR/}${NC}"
+  done
 else
-  echo -e "${YELLOW}Using default storage class.${NC}"
+  echo -e "${YELLOW}No storage class provided. Commenting out storageClassName to use cluster default.${NC}"
+  for pvc_file in "${PVC_FILES[@]}"; do
+    sed -i "s/^  storageClassName:.*/#  storageClassName: default/" "$pvc_file"
+    echo -e "${GREEN}Cleared: ${pvc_file#$MODELS_DIR/}${NC}"
+  done
 fi
 
 echo " "
