@@ -24,7 +24,7 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
   As written, most NIM vLLM alerts can never fire. Final names should still be confirmed
   once against a live pod: `curl <nim-svc>:8000/v1/metrics`.
 
-- **Rework the NIM TensorRT-LLM / embedding rules.** The NeMo Retriever Text Embedding NIM
+- **[DONE 2026-07-07] Rework the NIM TensorRT-LLM / embedding rules.** The NeMo Retriever Text Embedding NIM
   is Triton-based; it does not expose `trtllm_request_latency_ms_bucket`,
   `trtllm_request_failures_total`, or `embedding_requests_total`. Expect Triton metrics
   instead (`nv_inference_request_success`, `nv_inference_request_failure`,

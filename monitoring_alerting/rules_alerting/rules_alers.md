@@ -56,21 +56,23 @@
 *****************************************
 *****************************************
 
-## Metrics - NIM Container with TensorRT-LLM
-| Metric Category | Examples                                                               |
-| --------------- | ---------------------------------------------------------------------- |
-| Inference       | trtllm:request_count_total, trtllm:inference_duration_ms               |
-| Throughput      | trtllm:batch_size, trtllm:tokens_per_second                            |
-| GPU             | gpu_utilization, gpu_memory_used_bytes, gpu_cache_usage_perc           |
-| Latency         | trtllm:request_latency_ms, trtllm:time_to_first_token_ms               |
-| Embedding       | embedding_requests_total, embedding_tokens_total, embedding_latency_ms |
-| Errors          | trtllm:request_failures_total                                          |
+## Metrics - NIM Container with TensorRT-LLM / Embedding (Triton-based)
+
+The embedding NIM (NeMo Retriever) runs on Triton Inference Server; latency metrics are
+cumulative counters in microseconds, and `nv_gpu_utilization` is a 0.0-1.0 gauge.
+
+| Metric Category | Examples                                                                  |
+| --------------- | -------------------------------------------------------------------------- |
+| Inference       | nv_inference_request_success, nv_inference_count, nv_inference_exec_count |
+| Latency         | nv_inference_request_duration_us, nv_inference_queue_duration_us          |
+| GPU             | nv_gpu_utilization, nv_gpu_memory_used_bytes, nv_gpu_memory_total_bytes   |
+| Errors          | nv_inference_request_failure                                              |
 
 ## Prometheus Ruls and Alerts - NIM Container with TensorRT-LLM
-| Alert                     | Expression                                                                 | For | Severity |
-| ------------------------- | -------------------------------------------------------------------------- | --- | -------- |
-| NIMEmbeddingHighLatency   | histogram_quantile(0.95, rate(trtllm_request_latency_ms_bucket[5m])) > 500 | 2m  | warning  |
-| NIMEmbeddingFailures      | rate(trtllm_request_failures_total[5m]) > 0.01                             | 1m  | critical |
-| NIMEmbeddingGPUMemoryHigh | gpu_memory_used_bytes / gpu_memory_total_bytes > 0.9                       | 5m  | warning  |
-| NIMEmbeddingLowThroughput | rate(embedding_requests_total[5m]) < 50                                    | 10m | warning  |
-| NIMEmbeddingGPUUtilHigh   | gpu_utilization > 95                                                       | 10m | warning  |
+| Alert                     | Expression                                                                                   | For | Severity |
+| ------------------------- | --------------------------------------------------------------------------------------------- | --- | -------- |
+| NIMEmbeddingHighLatency   | rate(nv_inference_request_duration_us[5m]) / rate(nv_inference_request_success[5m]) > 500000 | 2m  | warning  |
+| NIMEmbeddingFailures      | rate(nv_inference_request_failure[5m]) > 0.01                                                | 1m  | critical |
+| NIMEmbeddingGPUMemoryHigh | nv_gpu_memory_used_bytes / nv_gpu_memory_total_bytes > 0.9                                   | 5m  | warning  |
+| NIMEmbeddingLowThroughput | rate(nv_inference_request_success[5m]) < 50                                                  | 10m | warning  |
+| NIMEmbeddingGPUUtilHigh   | nv_gpu_utilization > 0.95                                                                    | 10m | warning  |

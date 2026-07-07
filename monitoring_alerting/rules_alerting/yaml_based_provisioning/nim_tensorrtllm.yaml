@@ -9,26 +9,29 @@ spec:
   groups:
     - name: nim-embedding.rules
       rules:
+        # The embedding NIM is Triton-based: latency metrics are cumulative counters in
+        # microseconds (no histograms by default), so this alerts on average latency.
+        # For p95, start Triton with --metrics-config summary_latencies=true.
         - alert: NIMEmbeddingHighLatency
-          expr: histogram_quantile(0.95, rate(trtllm_request_latency_ms_bucket[5m])) > 500
+          expr: rate(nv_inference_request_duration_us[5m]) / rate(nv_inference_request_success[5m]) > 500000
           for: 2m
           labels:
             severity: warning
           annotations:
             summary: "High embedding latency"
-            description: "95th percentile embedding latency > 500ms"
+            description: "Average embedding request latency > 500ms"
 
         - alert: NIMEmbeddingFailures
-          expr: rate(trtllm_request_failures_total[5m]) > 0.01
+          expr: rate(nv_inference_request_failure[5m]) > 0.01
           for: 1m
           labels:
             severity: critical
           annotations:
             summary: "Embedding request failures"
-            description: "Embedding request failure rate > 1%"
+            description: "Failed embedding request rate > 0.01 req/s"
 
         - alert: NIMEmbeddingGPUMemoryHigh
-          expr: gpu_memory_used_bytes / gpu_memory_total_bytes > 0.9
+          expr: nv_gpu_memory_used_bytes / nv_gpu_memory_total_bytes > 0.9
           for: 5m
           labels:
             severity: warning
@@ -37,7 +40,7 @@ spec:
             description: "GPU memory usage > 90% during embeddings"
 
         - alert: NIMEmbeddingLowThroughput
-          expr: rate(embedding_requests_total[5m]) < 50
+          expr: rate(nv_inference_request_success[5m]) < 50
           for: 10m
           labels:
             severity: warning
@@ -45,8 +48,9 @@ spec:
             summary: "Low embedding throughput"
             description: "Embedding requests per second < 50"
 
+        # nv_gpu_utilization is a 0.0-1.0 gauge, not a percentage
         - alert: NIMEmbeddingGPUUtilHigh
-          expr: gpu_utilization > 95
+          expr: nv_gpu_utilization > 0.95
           for: 10m
           labels:
             severity: warning
