@@ -33,19 +33,19 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
   scrape of the embedding NIM (`:8000/v1/metrics`, Triton also on `:8002/metrics`); note
   Triton durations are in **microseconds**, so latency thresholds need converting.
 
-- **Add label/value templating to annotations.** Descriptions are static text; include
+- **[DONE 2026-07-07] Add label/value templating to annotations.** Descriptions are static text; include
   `{{ $labels.Hostname }}`, `{{ $labels.gpu }}`, `{{ $labels.pod }}`, `{{ $value }}` so a
   firing alert identifies the affected GPU/node/pod.
 
-- **Scope `GPUNodeNotReady` to GPU nodes.** `kube_node_status_condition{condition="Ready",
+- **[DONE 2026-07-07] Scope `GPUNodeNotReady` to GPU nodes.** `kube_node_status_condition{condition="Ready",
   status="true"} == 0` matches every node in the cluster; join on a GPU node label
   (e.g. `* on(node) group_left kube_node_labels{label_nvidia_com_gpu_present="true"}`).
 
-- **Fix `GPUUnhealthy`.** `DCGM_FI_DEV_GPU_TEMP < 0 or DCGM_FI_DEV_GPU_UTIL < 0` never
+- **[DONE 2026-07-07] Fix `GPUUnhealthy`.** `DCGM_FI_DEV_GPU_TEMP < 0 or DCGM_FI_DEV_GPU_UTIL < 0` never
   fires — unhealthy GPUs make the metric disappear, not go negative. Use
   `absent(DCGM_FI_DEV_GPU_TEMP)` or rely on `DCGMExporterDown`.
 
-- **Add `runbook_url` annotations** (even pointing at sections of `rules_alerts.md`) so
+- **[DONE 2026-07-07] Add `runbook_url` annotations** (even pointing at sections of `rules_alerts.md`) so
   receivers get a next step.
 
 - **Make the YAML CRs OpenShift-aware.** `namespace: monitoring` + label

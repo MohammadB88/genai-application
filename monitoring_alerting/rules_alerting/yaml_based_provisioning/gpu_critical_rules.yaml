@@ -5,6 +5,8 @@ metadata:
   namespace: monitoring
   labels:
     release: kube-prometheus-stack
+# NOTE: runbook_url points to the public GitHub repo and will not resolve in
+# air-gapped environments - replace it with an internal mirror/wiki URL if needed.
 spec:
   groups:
     - name: gpu-critical.rules
@@ -16,7 +18,8 @@ spec:
             severity: critical
           annotations:
             summary: "GPU memory critical"
-            description: "GPU memory usage is above 95% for more than 5 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} memory usage is {{ $value | humanizePercentage }} (above 95%) for more than 5 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUTemperatureCritical
           expr: DCGM_FI_DEV_GPU_TEMP > 85
@@ -25,7 +28,8 @@ spec:
             severity: critical
           annotations:
             summary: "GPU temperature critical"
-            description: "GPU temperature is above 85C for more than 3 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} temperature is {{ $value | humanize }}C (above 85C) for more than 3 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUPowerCritical
           expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.95
@@ -34,7 +38,8 @@ spec:
             severity: critical
           annotations:
             summary: "GPU power critical"
-            description: "GPU power draw is above 95% of the power limit for more than 3 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} power draw is {{ $value | humanizePercentage }} of the power limit for more than 3 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUXIDErrorDetected
           expr: DCGM_FI_DEV_XID_ERRORS > 0
@@ -43,13 +48,17 @@ spec:
             severity: critical
           annotations:
             summary: "GPU XID error detected"
-            description: "One or more GPU XID errors have been detected."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} reports {{ $value | humanize }} XID errors."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
+        # Unhealthy GPUs stop reporting metrics rather than reporting negative values,
+        # so alert on the metric being absent instead of on impossible values
         - alert: GPUUnhealthy
-          expr: DCGM_FI_DEV_GPU_TEMP < 0 or DCGM_FI_DEV_GPU_UTIL < 0
+          expr: absent(DCGM_FI_DEV_GPU_TEMP)
           for: 1m
           labels:
             severity: critical
           annotations:
             summary: "GPU metrics unavailable or unhealthy"
-            description: "GPU metrics indicate an unhealthy or unavailable device."
+            description: "DCGM GPU metrics are absent - GPUs may be unhealthy or the exporter is not reporting device metrics."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"

@@ -14,7 +14,7 @@
 | DCGMExporterDown        | up{job=~".*dcgm.*\|.*gpu.*"} == 0                                                  | 5m          | critical |
 | GPUDriverNotReady       | kube_pod_container_status_ready{namespace="gpu-operator", pod=~".*driver.*"} == 0  | 10m         | critical |
 | GPUToolkitNotReady      | kube_pod_container_status_ready{namespace="gpu-operator", pod=~".*toolkit.*"} == 0 | 10m         | warning  |
-| GPUNodeNotReady         | kube_node_status_condition{condition="Ready", status="true"} == 0                  | 5m          | critical |
+| GPUNodeNotReady         | kube_node_status_condition{condition="Ready", status="true"} == 0 and on(node) kube_node_status_capacity{resource="nvidia_com_gpu"} > 0 | 5m          | critical |
 | GPUErrorsIncreasing     | increase(DCGM_FI_DEV_XID_ERRORS[10m]) > 0                                          | 0m          | critical |
 | GPUMemoryHigh           | DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.85           | 10m         | warning  |
 | GPUTemperatureHigh      | DCGM_FI_DEV_GPU_TEMP > 80                                                          | 5m          | warning  |

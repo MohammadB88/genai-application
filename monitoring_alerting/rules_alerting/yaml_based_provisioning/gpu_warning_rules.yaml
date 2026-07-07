@@ -5,6 +5,8 @@ metadata:
   namespace: monitoring
   labels:
     release: kube-prometheus-stack
+# NOTE: runbook_url points to the public GitHub repo and will not resolve in
+# air-gapped environments - replace it with an internal mirror/wiki URL if needed.
 spec:
   groups:
     - name: gpu-warning.rules
@@ -16,7 +18,8 @@ spec:
             severity: warning
           annotations:
             summary: "GPU memory high"
-            description: "GPU memory usage is above 85% for more than 10 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} memory usage is {{ $value | humanizePercentage }} (above 85%) for more than 10 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUTemperatureHigh
           expr: DCGM_FI_DEV_GPU_TEMP > 80
@@ -25,7 +28,8 @@ spec:
             severity: warning
           annotations:
             summary: "GPU temperature high"
-            description: "GPU temperature is above 80C for more than 5 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} temperature is {{ $value | humanize }}C (above 80C) for more than 5 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUUtilizationHigh
           expr: DCGM_FI_DEV_GPU_UTIL > 90
@@ -34,7 +38,8 @@ spec:
             severity: warning
           annotations:
             summary: "GPU utilization high"
-            description: "GPU utilization is above 90% for more than 10 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} utilization is {{ $value | humanize }}% (above 90%) for more than 10 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUPowerNearLimit
           expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.9
@@ -43,7 +48,8 @@ spec:
             severity: warning
           annotations:
             summary: "GPU power near limit"
-            description: "GPU power draw is above 90% of the power limit for more than 5 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} power draw is {{ $value | humanizePercentage }} of the power limit for more than 5 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUUnderutilized
           expr: DCGM_FI_DEV_GPU_UTIL < 30
@@ -52,4 +58,5 @@ spec:
             severity: warning
           annotations:
             summary: "GPU underutilized"
-            description: "GPU utilization is below 30% for more than 15 minutes."
+            description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} utilization is {{ $value | humanize }}% (below 30%) for more than 15 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"

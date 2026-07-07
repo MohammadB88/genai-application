@@ -5,6 +5,8 @@ metadata:
   namespace: monitoring
   labels:
     release: kube-prometheus-stack
+# NOTE: runbook_url points to the public GitHub repo and will not resolve in
+# air-gapped environments - replace it with an internal mirror/wiki URL if needed.
 spec:
   groups:
     - name: nim-embedding.rules
@@ -19,7 +21,8 @@ spec:
             severity: warning
           annotations:
             summary: "High embedding latency"
-            description: "Average embedding request latency > 500ms"
+            description: "Average embedding request latency for model {{ $labels.model }} is {{ $value | humanize }}us (above 500ms)."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-tensorrt-llm"
 
         - alert: NIMEmbeddingFailures
           expr: rate(nv_inference_request_failure[5m]) > 0.01
@@ -28,7 +31,8 @@ spec:
             severity: critical
           annotations:
             summary: "Embedding request failures"
-            description: "Failed embedding request rate > 0.01 req/s"
+            description: "Failed embedding request rate for model {{ $labels.model }} is {{ $value | humanize }}/s (above 0.01/s)."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-tensorrt-llm"
 
         - alert: NIMEmbeddingGPUMemoryHigh
           expr: nv_gpu_memory_used_bytes / nv_gpu_memory_total_bytes > 0.9
@@ -37,7 +41,8 @@ spec:
             severity: warning
           annotations:
             summary: "High GPU memory usage"
-            description: "GPU memory usage > 90% during embeddings"
+            description: "GPU {{ $labels.gpu_uuid }} memory usage is {{ $value | humanizePercentage }} (above 90%) during embeddings."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-tensorrt-llm"
 
         - alert: NIMEmbeddingLowThroughput
           expr: rate(nv_inference_request_success[5m]) < 50
@@ -46,7 +51,8 @@ spec:
             severity: warning
           annotations:
             summary: "Low embedding throughput"
-            description: "Embedding requests per second < 50"
+            description: "Embedding request rate for model {{ $labels.model }} is {{ $value | humanize }} req/s (below 50)."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-tensorrt-llm"
 
         # nv_gpu_utilization is a 0.0-1.0 gauge, not a percentage
         - alert: NIMEmbeddingGPUUtilHigh
@@ -56,4 +62,5 @@ spec:
             severity: warning
           annotations:
             summary: "High GPU utilization"
-            description: "GPU utilization > 95% sustained"
+            description: "GPU {{ $labels.gpu_uuid }} utilization is {{ $value | humanizePercentage }} (above 95%) sustained for 10 minutes."
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-tensorrt-llm"
