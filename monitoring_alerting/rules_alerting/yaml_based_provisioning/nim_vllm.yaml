@@ -10,7 +10,7 @@ spec:
     - name: nim-vllm.rules
       rules:
         - alert: NIMHighP99Latency
-          expr: histogram_quantile(0.99, rate(vllm_request_duration_seconds_bucket[5m])) > 3
+          expr: histogram_quantile(0.99, rate(vllm:e2e_request_latency_seconds_bucket[5m])) > 3
           for: 2m
           labels:
             severity: warning
@@ -19,7 +19,7 @@ spec:
             description: "99th percentile request latency > 3s"
 
         - alert: NIMQueueTooLong
-          expr: vllm_num_waiting_requests > 10
+          expr: vllm:num_requests_waiting > 10
           for: 1m
           labels:
             severity: critical
@@ -28,7 +28,8 @@ spec:
             description: "More than 10 requests waiting in queue"
 
         - alert: NIMKVCacheHigh
-          expr: gpu_cache_usage_perc > 0.9
+          # vLLM v1 engines expose vllm:kv_cache_usage_perc; older v0 builds expose vllm:gpu_cache_usage_perc
+          expr: (vllm:kv_cache_usage_perc or vllm:gpu_cache_usage_perc) > 0.9
           for: 5m
           labels:
             severity: critical
@@ -37,7 +38,8 @@ spec:
             description: "KV cache usage > 90%"
 
         - alert: NIMGPUMemoryHigh
-          expr: vllm_gpu_memory_used_bytes / vllm_gpu_memory_total_bytes > 0.95
+          # vLLM does not expose GPU memory metrics; use DCGM framebuffer usage instead
+          expr: DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.95
           for: 5m
           labels:
             severity: critical
@@ -46,7 +48,7 @@ spec:
             description: "GPU memory usage > 95%"
 
         - alert: NIMHighPreemptions
-          expr: rate(vllm_num_preemptions_total[5m]) > 0.1
+          expr: rate(vllm:num_preemptions_total[5m]) > 0.1
           for: 2m
           labels:
             severity: warning
@@ -55,7 +57,7 @@ spec:
             description: "Request preemptions rate too high"
 
         - alert: NIMHighTTFT
-          expr: histogram_quantile(0.95, rate(vllm_time_to_first_token_seconds_bucket[5m])) > 2
+          expr: histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket[5m])) > 2
           for: 2m
           labels:
             severity: warning
@@ -64,7 +66,7 @@ spec:
             description: "95th percentile TTFT > 2s"
 
         - alert: NIMLowThroughput
-          expr: rate(vllm_tokens_per_second_total[5m]) < 10
+          expr: rate(vllm:generation_tokens_total[5m]) < 10
           for: 10m
           labels:
             severity: warning
@@ -73,10 +75,11 @@ spec:
             description: "Token throughput below 10 tps"
 
         - alert: NIMRequestsFailing
-          expr: rate(vllm_request_failure_total[5m]) > 0.01
+          # vLLM has no failure counter; aborted requests (finished_reason="abort") are the failure signal
+          expr: rate(vllm:request_success_total{finished_reason="abort"}[5m]) > 0.01
           for: 1m
           labels:
             severity: critical
           annotations:
             summary: "Request failures detected"
-            description: "Request failure rate > 1%"
+            description: "Aborted request rate > 0.01 req/s"

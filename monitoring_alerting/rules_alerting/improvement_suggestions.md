@@ -6,7 +6,7 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
 
 ## 1. Alert & rule content (applies to both YAML and JSON forms)
 
-- **Fix the NIM vLLM metric names — verified against vLLM/NIM docs.** NIM passes through
+- **[DONE 2026-07-07] Fix the NIM vLLM metric names — verified against vLLM/NIM docs.** NIM passes through
   vLLM's native metrics, and all of them use the `vllm:` prefix (colon, not underscore).
   The names currently in `nim_vllm.yaml` and `rules/nim-vllm/*.env` do not exist:
 

@@ -30,27 +30,27 @@
 
 ## Metrics - NIM Container with vLLM
 
-| Metric Category | Examples                                                                         |
-| --------------- | -------------------------------------------------------------------------------- |
-| Request         | vllm:requests_per_second_total, vllm:request_duration_seconds                    |
-| Queue           | vllm:running_requests, vllm:waiting_requests, vllm:queue_length                  |
-| Tokens          | vllm:prompt_tokens_total, vllm:generation_tokens_total, vllm:output_tokens_total |
-| Latency         | vllm:time_to_first_token, vllm:inter_token_latency, vllm:request_latency_seconds |
-| GPU             | gpu_cache_usage_perc, vllm:gpu_memory_used_bytes, vllm:gpu_utilization_perc      |
-| Throughput      | vllm:tokens_per_second_total, vllm:requests_inflight                             |
+| Metric Category | Examples                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| Request         | vllm:request_success_total, vllm:e2e_request_latency_seconds                                 |
+| Queue           | vllm:num_requests_running, vllm:num_requests_waiting, vllm:request_queue_time_seconds        |
+| Tokens          | vllm:prompt_tokens_total, vllm:generation_tokens_total                                       |
+| Latency         | vllm:time_to_first_token_seconds, vllm:inter_token_latency_seconds                           |
+| Cache/GPU       | vllm:kv_cache_usage_perc (v0: vllm:gpu_cache_usage_perc); GPU memory via DCGM_FI_DEV_FB_USED |
+| Scheduling      | vllm:num_preemptions_total                                                                   |
 
 ### Prometheus Ruls and Alerts - NIM Container with vLLM
 
-| Alert            | Expression                                                                      | For | Severity |
-| ---------------- | ------------------------------------------------------------------------------- | --- | -------- |
-| High P99 latency | histogram_quantile(0.99, rate(vllm_request_duration_seconds_bucket[5m])) > 3    | 2m  | warning  |
-| Queue too long   | vllm_num_waiting_requests > 10                                                  | 1m  | critical |
-| KV cache high    | vllm_kv_cache_usage_perc > 0.9                                                  | 5m  | critical |
-| GPU memory high  | vllm_gpu_memory_used_bytes / vllm_gpu_memory_total_bytes > 0.95                 | 5m  | critical |
-| Preemptions high | rate(vllm_num_preemptions_total[5m]) > 0.1                                      | 2m  | warning  |
-| TTFT high        | histogram_quantile(0.95, rate(vllm_time_to_first_token_seconds_bucket[5m])) > 2 | 2m  | warning  |
-| Low throughput   | rate(vllm_tokens_per_second_total[5m]) < 10                                     | 10m | warning  |
-| Requests failing | rate(vllm_request_failure_total[5m]) > 0.01                                     | 1m  | critical |
+| Alert            | Expression                                                                       | For | Severity |
+| ---------------- | --------------------------------------------------------------------------------- | --- | -------- |
+| High P99 latency | histogram_quantile(0.99, rate(vllm:e2e_request_latency_seconds_bucket[5m])) > 3  | 2m  | warning  |
+| Queue too long   | vllm:num_requests_waiting > 10                                                   | 1m  | critical |
+| KV cache high    | (vllm:kv_cache_usage_perc or vllm:gpu_cache_usage_perc) > 0.9                    | 5m  | critical |
+| GPU memory high  | DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.95         | 5m  | critical |
+| Preemptions high | rate(vllm:num_preemptions_total[5m]) > 0.1                                       | 2m  | warning  |
+| TTFT high        | histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket[5m])) > 2  | 2m  | warning  |
+| Low throughput   | rate(vllm:generation_tokens_total[5m]) < 10                                      | 10m | warning  |
+| Requests failing | rate(vllm:request_success_total{finished_reason="abort"}[5m]) > 0.01             | 1m  | critical |
 
 
 *****************************************
