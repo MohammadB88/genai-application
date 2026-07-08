@@ -48,26 +48,31 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
 - **[DONE 2026-07-07] Add `runbook_url` annotations** (even pointing at sections of `rules_alerts.md`) so
   receivers get a next step.
 
-- **Make the YAML CRs OpenShift-aware.** `namespace: monitoring` + label
+- **[ON HOLD] Make the YAML CRs OpenShift-aware.** `namespace: monitoring` + label
   `release: kube-prometheus-stack` targets a kube-prometheus-stack install. On OpenShift
   user-workload monitoring, PrometheusRules must live in the workload namespace and need
   no release label. Provide kustomize overlays (OpenShift UWM vs kube-prometheus-stack)
   or document the required edit.
 
-- **Enforce YAML ↔ JSON parity mechanically.** Since the trees are identical by design,
-  add a `check_sync.sh` (or CI step) that extracts `expr` / `for` / `severity` from both
-  and diffs them, so a threshold changed on one side fails loudly.
+- **[DONE 2026-07-08] Enforce YAML ↔ JSON parity mechanically.** Since the trees are
+  identical by design, added [`check_sync.py`](check_sync.py) (stdlib-only, run from
+  `rules_alerting/`) which extracts `expr` / `for` / `severity` per alert name from both
+  trees and diffs them. First run caught real drift on 4 GPU rules (`GPUErrorsIncreasing`
+  missing its `> 0` comparison and `for: 0s` instead of `0m`; `GPUMemoryCritical` at 0.98
+  vs 0.95; `GPUMemoryHigh` at 0.95 vs 0.85; `GPUMemoryHighComputeLow` at 0.95 vs 0.80) —
+  all fixed to match the YAML side, which was the source of truth. Now exits 0.
 
-- **Clean up the JSON template** (`templates/alert-rule.json.tmpl`):
-  - The reduce/threshold stages are dead weight — every rule ships
-    `THRESHOLD_OP="gt"` / `THRESHOLD_VALUE=-1` because the threshold is baked into
-    `ALERT_EXPR`. Either drop stages B/C, or move thresholds into `THRESHOLD_VALUE`
-    so they become editable in the Grafana GUI.
-  - Prefer `"datasourceUid": "__expr__"` over the legacy `"-100"` for expression
-    stages (both still work per Grafana docs, but `__expr__` is the current convention).
-  - Make `orgID` configurable instead of hardcoded `1`.
-  - Reconsider `noDataState: "OK"` for critical rules — it silences alerts exactly when
-    metrics vanish; use `Alerting` or `NoData` for exporter-health-style rules.
+- **[DONE 2026-07-08] Clean up the JSON template** (`templates/alert-rule.json.tmpl`):
+  - Reduce/threshold stages (B/C) kept — Grafana's provisioning API requires the rule
+    `condition` to reference a reduced/thresholded expression, so they can't simply be
+    dropped. Instead, `THRESHOLD_OP`/`THRESHOLD_VALUE` moved to defaults in
+    `config/global.env` (`gt` / `-1`, documented inline) and removed from all 33 rule
+    `.env` files — they're still overridable per-rule if a threshold is ever pulled out
+    of `ALERT_EXPR` to make it GUI-editable.
+  - `"datasourceUid": "-100"` → `"__expr__"` for both expression stages (B and C).
+  - `orgID` is now `${ORGID}`, sourced from `config/global.env` (default `1`).
+  - `noDataState: "OK"` left as-is for now — flagged but not changed in this pass;
+    revisit per-rule if false negatives on exporter-down scenarios become a problem.
 
 ## 2. Scripts (`json_based_provisioning/`)
 

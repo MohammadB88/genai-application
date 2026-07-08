@@ -1,6 +1,6 @@
 {
   "title": "${ALERT_TITLE}",
-  "orgID": 1,
+  "orgID": ${ORGID},
   "folderUID": "${GRAFANA_FOLDER_UID}",
   "ruleGroup": "${ALERT_GROUP}",
   "for": "${ALERT_FOR}",
@@ -30,7 +30,7 @@
       "refId": "B",
       "queryType": "__expr__",
       "relativeTimeRange": { "from": 0, "to": 0 },
-      "datasourceUid": "-100",
+      "datasourceUid": "__expr__",
       "model": {
         "type": "reduce",
         "refId": "B",
@@ -42,7 +42,7 @@
       "refId": "C",
       "queryType": "__expr__",
       "relativeTimeRange": { "from": 0, "to": 0 },
-      "datasourceUid": "-100",
+      "datasourceUid": "__expr__",
       "model": {
         "type": "threshold",
         "refId": "C",
