@@ -41,8 +41,10 @@ spec:
             description: "GPU utilization spread on node {{ $labels.node }} is {{ $value | humanize }} percentage points - some GPUs are heavily loaded while others are mostly idle."
             runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
+        # DCGM_FI_DEV_POWER_MGMT_LIMIT is not in dcgm-exporter's default counters -
+        # add it to a custom counters file for this expression to resolve any data
         - alert: GPUPowerInefficient
-          expr: (DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.85) and (DCGM_FI_DEV_GPU_UTIL < 50)
+          expr: (DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.85) and (DCGM_FI_DEV_GPU_UTIL < 50)
           for: 20m
           labels:
             severity: warning

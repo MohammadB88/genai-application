@@ -41,8 +41,10 @@ spec:
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} utilization is {{ $value | humanize }}% (above 90%) for more than 10 minutes."
             runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
+        # DCGM_FI_DEV_POWER_MGMT_LIMIT is not in dcgm-exporter's default counters -
+        # add it to a custom counters file for this expression to resolve any data
         - alert: GPUPowerNearLimit
-          expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.9
+          expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.9
           for: 5m
           labels:
             severity: warning

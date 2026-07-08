@@ -31,8 +31,10 @@ spec:
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} temperature is {{ $value | humanize }}C (above 85C) for more than 3 minutes."
             runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
+        # DCGM_FI_DEV_POWER_MGMT_LIMIT is not in dcgm-exporter's default counters -
+        # add it to a custom counters file for this expression to resolve any data
         - alert: GPUPowerCritical
-          expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.95
+          expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.95
           for: 3m
           labels:
             severity: critical

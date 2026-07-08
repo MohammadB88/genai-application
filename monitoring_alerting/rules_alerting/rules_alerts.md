@@ -1,11 +1,18 @@
 ## Metrics - GPU
+
+GPU driver/toolkit/node readiness comes from `kube_pod_container_status_ready` /
+`kube_node_status_condition` (kube-state-metrics), not the GPU Operator itself — the
+GPU Operator does not expose a `gpu_operator_*`-prefixed Prometheus endpoint; its
+readiness is surfaced via `ClusterPolicy` CR status and node labels
+(`nvidia.com/gpu.deploy.driver`, etc.), not metrics.
+
 | Category         | Examples                                                                                                   |
 | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| Operator         | gpu_operator_gpu_nodes_total, gpu_operator_reconciliation_status, gpu_operator_reconciliation_failed_total |
-| Node Status      | gpu_operator_driver_ready, gpu_operator_toolkit_ready, gpu_operator_cuda_ready                             |
-| DCGM GPU         | DCGM_FI_DEV_GPU_UTIL, DCGM_FI_DEV_FB_USED, DCGM_FI_DEV_GPU_TEMP, DCGM_FI_DEV_POWER_USAGE                   |
-| DCGM Health      | DCGM_FI_DEV_XID_ERRORS, DCGM_FI_DEV_ECC_ERRORS, DCGM_FI_DEV_FB_FREE                                        |
-| DCGM PCIe/NVLink | DCGM_FI_DEV_PCIE_TX_THROUGHPUT, DCGM_FI_DEV_NVLink_THROUGHPUT                                              |
+| Node Status       | kube_pod_container_status_ready, kube_node_status_condition, kube_node_status_capacity{resource="nvidia_com_gpu"} |
+| DCGM GPU         | DCGM_FI_DEV_GPU_UTIL, DCGM_FI_DEV_FB_USED, DCGM_FI_DEV_FB_FREE, DCGM_FI_DEV_GPU_TEMP, DCGM_FI_DEV_POWER_USAGE |
+| DCGM Health      | DCGM_FI_DEV_XID_ERRORS, DCGM_FI_DEV_ECC_SBE_VOL_TOTAL, DCGM_FI_DEV_ECC_DBE_VOL_TOTAL                        |
+| DCGM Power Limit | DCGM_FI_DEV_POWER_MGMT_LIMIT — **not in dcgm-exporter's default counters; requires a custom counters file** |
+| DCGM PCIe/NVLink | DCGM_FI_PROF_PCIE_TX_BYTES, DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL                                              |
 
 ### Prometheus Ruls and Alerts - GPU
 
@@ -19,11 +26,21 @@
 | GPUMemoryHigh           | DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.85           | 10m         | warning  |
 | GPUTemperatureHigh      | DCGM_FI_DEV_GPU_TEMP > 80                                                          | 5m          | warning  |
 | GPUUtilizationHigh      | DCGM_FI_DEV_GPU_UTIL > 90                                                          | 10m         | warning  |
-| GPUPowerNearLimit       | DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.9                            | 5m          | warning  |
-| GPUUnderutilized        | DCGM_FI_DEV_GPU_UTIL < 30                                                          | 15m/30m/45m | warning  |
-| GPUMemoryHighComputeLow | (DCGM_FI_DEV_FB_USED / total > 0.80) and (DCGM_FI_DEV_GPU_UTIL < 40)               | 20m         | warning  |
-| GPUImbalanceDetected    | max(DCGM_FI_DEV_GPU_UTIL) - min(DCGM_FI_DEV_GPU_UTIL) > 50                         | 15m         | warning  |
-| GPUPowerInefficient     | (power_usage > 0.85) and (DCGM_FI_DEV_GPU_UTIL < 50)                               | 20m         | warning  |
+| GPUPowerNearLimit       | DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.9                       | 5m          | warning  |
+| GPUUnderutilized        | DCGM_FI_DEV_GPU_UTIL < 30                                                          | 15m/30m     | warning  |
+| GPUMemoryHighComputeLow | (DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.80) and (DCGM_FI_DEV_GPU_UTIL < 40) | 20m | warning  |
+| GPUImbalanceDetected    | max by (node) (DCGM_FI_DEV_GPU_UTIL) - min by (node) (DCGM_FI_DEV_GPU_UTIL) > 50   | 15m         | warning  |
+| GPUPowerInefficient     | (DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.85) and (DCGM_FI_DEV_GPU_UTIL < 50) | 20m | warning  |
+| IdleGPUOnExpensiveNode  | DCGM_FI_DEV_GPU_UTIL < 20                                                          | 45m         | warning  |
+| GPUMemoryCritical       | DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.95           | 5m          | critical |
+| GPUTemperatureCritical  | DCGM_FI_DEV_GPU_TEMP > 85                                                          | 3m          | critical |
+| GPUPowerCritical        | DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.95                      | 3m          | critical |
+| GPUXIDErrorDetected     | DCGM_FI_DEV_XID_ERRORS > 0                                                         | 1m          | critical |
+| GPUUnhealthy            | absent(DCGM_FI_DEV_GPU_TEMP)                                                       | 1m          | critical |
+
+> `GPUUnderutilized` is defined twice at different thresholds: `for: 15m` in
+> `gpu_warning_rules.yaml` and `for: 30m` in `gpu_cost_efficiency.yaml` (same
+> expression, two different alert names in different rule groups — not a conflict).
 
 *****************************************
 *****************************************

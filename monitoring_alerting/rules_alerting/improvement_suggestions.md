@@ -107,19 +107,46 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
 
 ## 3. README / docs
 
-- **Fix `json_based_provisioning/README.md`:** it references `deploy-rule.sh` and
-  `cleanup.sh`, which don't exist. Document the real scripts (or the consolidated one),
-  the `GRAFANA_URL`/`GRAFANA_TOKEN` env-or-prompt behavior, and the required first steps:
-  run `read_folders_datasources.sh` to obtain UIDs, then edit `config/global.env`
-  (currently placeholder `your-folder-uid` / `your-prometheus-uid`).
-- **Add a top-level `rules_alerting/README.md`** stating explicitly that both
-  subdirectories carry the identical catalog and when to use each path
-  (YAML → kubectl / ArgoCD / GUI import; JSON → Grafana provisioning API).
-- **Update the metric tables in `rules_alers.md`** to the verified names above — the
-  current tables mix invented names (`vllm:requests_per_second_total`,
-  `trtllm:inference_duration_ms`) with real ones.
-- Optionally add an ArgoCD `Application` under `gitops/` for `yaml_based_provisioning/`
-  to make the ArgoCD path concrete.
+- **[DONE 2026-07-08] Fix `json_based_provisioning/README.md`:** it referenced
+  `deploy-rule.sh` and `cleanup.sh`, which don't exist. Rewrote to document the real
+  scripts (`deploy_rules_gpu.sh`, `deploy_rules_nim_vllm.sh`,
+  `deploy_rules_nim_tensorrtllm.sh`, `cleanup_all.sh`, plus the `_v0_grep.sh`
+  fallbacks), the `GRAFANA_URL`/`GRAFANA_TOKEN` env-or-prompt behavior, and the
+  required first steps (run `read_folders_datasources.sh`, then edit
+  `config/global.env`).
+- **[DONE 2026-07-08] Add a top-level `rules_alerting/README.md`** stating explicitly
+  that both subdirectories carry the identical catalog and when to use each path
+  (YAML → kubectl / ArgoCD / GUI import; JSON → Grafana provisioning API), plus a
+  directory map and pointer to `check_sync.py`.
+- **[DONE 2026-07-08] Update the metric tables in `rules_alerts.md`** to verified
+  names. Beyond the vLLM/TensorRT-LLM fixes from earlier passes, a background
+  verification agent checked the GPU table against NVIDIA's DCGM exporter source
+  (`etc/default-counters.csv`, `dcgm-api-field-ids.html`) and found more problems:
+  - The entire "Operator" category (`gpu_operator_gpu_nodes_total`,
+    `gpu_operator_reconciliation_status`, `gpu_operator_driver_ready`, etc.) was
+    **fabricated** — the GPU Operator doesn't expose a `gpu_operator_*` Prometheus
+    endpoint; readiness is surfaced via `ClusterPolicy` CR status and node labels.
+    Removed from the table (the actual `GPUDriverNotReady`/`GPUToolkitNotReady`
+    alerts correctly use `kube_pod_container_status_ready`, which was never wrong).
+  - `DCGM_FI_DEV_ECC_ERRORS` doesn't exist as a field — replaced with
+    `DCGM_FI_DEV_ECC_SBE_VOL_TOTAL` / `DCGM_FI_DEV_ECC_DBE_VOL_TOTAL`.
+  - `DCGM_FI_DEV_PCIE_TX_THROUGHPUT` and `DCGM_FI_DEV_NVLink_THROUGHPUT` don't
+    exist — replaced with `DCGM_FI_PROF_PCIE_TX_BYTES` and
+    `DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL`.
+  - **`DCGM_FI_DEV_POWER_LIMIT` doesn't exist as a DCGM field** — this one wasn't
+    just a doc error, it was used in 3 *live* alert expressions
+    (`GPUPowerNearLimit`, `GPUPowerCritical`, `GPUPowerInefficient`) across both
+    provisioning trees, meaning those alerts could never evaluate. Fixed to
+    `DCGM_FI_DEV_POWER_MGMT_LIMIT` in all 6 rule files (3 YAML + 3 `.env`) and the
+    doc table, with a comment noting it's not in dcgm-exporter's default counters
+    and needs a custom counters file to actually populate. `check_sync.py` and the
+    JSON-render validator both still pass after the fix.
+  - The alert table was also stale relative to the actual rules (missing
+    `IdleGPUOnExpensiveNode`, `GPUMemoryCritical`, `GPUTemperatureCritical`,
+    `GPUPowerCritical`, `GPUXIDErrorDetected`, `GPUUnhealthy`; had a since-fixed
+    `GPUImbalanceDetected` expression) — regenerated to match all 20 GPU rules.
+- **[ON HOLD] Optionally add an ArgoCD `Application`** under `gitops/` for
+  `yaml_based_provisioning/` to make the ArgoCD path concrete.
 
 ## Sources
 
