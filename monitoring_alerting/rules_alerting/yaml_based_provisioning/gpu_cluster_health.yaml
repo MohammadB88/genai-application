@@ -19,7 +19,7 @@ spec:
           annotations:
             summary: "DCGM exporter down"
             description: "GPU metrics exporter target {{ $labels.instance }} (job {{ $labels.job }}) has not been scraped for more than 5 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUDriverNotReady
           expr: kube_pod_container_status_ready{namespace="gpu-operator", pod=~".*driver.*"} == 0
@@ -29,7 +29,7 @@ spec:
           annotations:
             summary: "GPU driver pod not ready"
             description: "GPU driver pod {{ $labels.pod }} is not ready for more than 10 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUToolkitNotReady
           expr: kube_pod_container_status_ready{namespace="gpu-operator", pod=~".*toolkit.*"} == 0
@@ -39,7 +39,7 @@ spec:
           annotations:
             summary: "GPU toolkit pod not ready"
             description: "GPU toolkit pod {{ $labels.pod }} is not ready for more than 10 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         # Scoped to nodes advertising nvidia.com/gpu capacity so it does not fire for non-GPU nodes
         - alert: GPUNodeNotReady
@@ -50,7 +50,7 @@ spec:
           annotations:
             summary: "GPU node not ready"
             description: "GPU node {{ $labels.node }} is not in Ready state."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUErrorsIncreasing
           expr: increase(DCGM_FI_DEV_XID_ERRORS[10m]) > 0
@@ -60,4 +60,4 @@ spec:
           annotations:
             summary: "GPU XID errors increasing"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} reported {{ $value | humanize }} new XID errors in the last 10 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"

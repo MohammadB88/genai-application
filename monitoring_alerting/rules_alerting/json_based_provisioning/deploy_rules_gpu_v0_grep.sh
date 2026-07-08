@@ -26,7 +26,7 @@ deploy() {
   local env_file=$1
   set -a
   source config/global.env
-  source config/nim_tensorrtllm.env
+  source config/gpu.env
   source "$env_file"
   set +a
 
@@ -53,25 +53,13 @@ deploy() {
     exit 1
   }
 
-  # Check if rule already exists by title using jq. If jq is unavailable, fall
-  # back to the grep-based matcher from deploy_rules_nim_tensorrtllm_v0_grep.sh.
+   # Check if rule already exists by title using jq
   echo "Checking if rule already exists..."
-  EXISTING_RULES=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
+  EXISTING=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${GRAFANA_TOKEN}") || {
-    echo "[ERROR] Failed to fetch existing alert rules from ${GRAFANA_URL} — aborting"
-    exit 1
-  }
-
-  if command -v jq >/dev/null 2>&1; then
-    EXISTING=$(echo "$EXISTING_RULES" | jq -r --arg t "$ALERT_TITLE" \
-      '[.[] | select(.title == $t)] | .[0].uid // empty')
-  else
-    echo "[WARN] jq not found — falling back to grep-based title match (see deploy_rules_nim_tensorrtllm_v0_grep.sh)"
-    EXISTING=$(echo "$EXISTING_RULES" | \
-      grep -o '"uid":"[^"]*".*"title":"'"$ALERT_TITLE"'"' | \
-      grep -o '"uid":"[^"]*"' | cut -d'"' -f4 | head -1) || true
-  fi
+    -H "Authorization: Bearer ${GRAFANA_TOKEN}" | \
+    grep -o '"uid":"[^"]*".*"title":"'"$ALERT_TITLE"'"' | \
+    grep -o '"uid":"[^"]*"' | cut -d'"' -f4 | head -1) || true
  
   if [[ -n "$EXISTING" ]]; then
     # Update existing rule
@@ -94,7 +82,7 @@ deploy() {
 }
  
 if [[ "$RULE_ENV" == "--all" ]]; then
-  for env_file in rules/nim-tensorrtllm/*.env; do
+  for env_file in rules/gpu/*.env; do
     deploy "$env_file"
   done
 else

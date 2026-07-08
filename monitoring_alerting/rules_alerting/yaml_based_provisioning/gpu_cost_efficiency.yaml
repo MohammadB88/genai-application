@@ -19,7 +19,7 @@ spec:
           annotations:
             summary: "GPU underutilized"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} utilization is {{ $value | humanize }}% (below 30%) for more than 30 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUMemoryHighComputeLow
           expr: (DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.80) and (DCGM_FI_DEV_GPU_UTIL < 40)
@@ -29,7 +29,7 @@ spec:
           annotations:
             summary: "High memory, low compute"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} memory usage is {{ $value | humanizePercentage }} while compute utilization is below 40%."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUImbalanceDetected
           expr: max by (node) (DCGM_FI_DEV_GPU_UTIL) - min by (node) (DCGM_FI_DEV_GPU_UTIL) > 50
@@ -39,7 +39,7 @@ spec:
           annotations:
             summary: "GPU imbalance detected"
             description: "GPU utilization spread on node {{ $labels.node }} is {{ $value | humanize }} percentage points - some GPUs are heavily loaded while others are mostly idle."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: GPUPowerInefficient
           expr: (DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_LIMIT > 0.85) and (DCGM_FI_DEV_GPU_UTIL < 50)
@@ -49,7 +49,7 @@ spec:
           annotations:
             summary: "Power usage inefficient"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} is drawing {{ $value | humanizePercentage }} of its power limit while utilization is below 50%."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"
 
         - alert: IdleGPUOnExpensiveNode
           expr: DCGM_FI_DEV_GPU_UTIL < 20
@@ -59,4 +59,4 @@ spec:
           annotations:
             summary: "Idle GPU on expensive node"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} has been mostly idle ({{ $value | humanize }}% utilization) for more than 45 minutes."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---gpu"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---gpu"

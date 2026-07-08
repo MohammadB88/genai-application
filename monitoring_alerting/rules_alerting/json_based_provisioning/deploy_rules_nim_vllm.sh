@@ -1,14 +1,14 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Use env vars if set, otherwise prompt interactively
-if [[ -z "$GRAFANA_URL" ]]; then
+if [[ -z "${GRAFANA_URL:-}" ]]; then
   read -rp "Grafana URL (e.g. https://grafana.example.com): " GRAFANA_URL
 else
   echo "Using GRAFANA_URL from environment: $GRAFANA_URL"
 fi
 
-if [[ -z "$GRAFANA_TOKEN" ]]; then
+if [[ -z "${GRAFANA_TOKEN:-}" ]]; then
   read -rsp "Grafana API Token: " GRAFANA_TOKEN
   echo
 else
@@ -53,13 +53,25 @@ deploy() {
     exit 1
   }
 
-   # Check if rule already exists by title using jq
+  # Check if rule already exists by title using jq. If jq is unavailable, fall
+  # back to the grep-based matcher from deploy_rules_nim_vllm_v0_grep.sh.
   echo "Checking if rule already exists..."
-  EXISTING=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
+  EXISTING_RULES=$(curl -sf -X GET "${GRAFANA_URL}/api/v1/provisioning/alert-rules" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${GRAFANA_TOKEN}" | \
-    grep -o '"uid":"[^"]*".*"title":"'"$ALERT_TITLE"'"' | \
-    grep -o '"uid":"[^"]*"' | cut -d'"' -f4 | head -1) || true
+    -H "Authorization: Bearer ${GRAFANA_TOKEN}") || {
+    echo "[ERROR] Failed to fetch existing alert rules from ${GRAFANA_URL} — aborting"
+    exit 1
+  }
+
+  if command -v jq >/dev/null 2>&1; then
+    EXISTING=$(echo "$EXISTING_RULES" | jq -r --arg t "$ALERT_TITLE" \
+      '[.[] | select(.title == $t)] | .[0].uid // empty')
+  else
+    echo "[WARN] jq not found — falling back to grep-based title match (see deploy_rules_nim_vllm_v0_grep.sh)"
+    EXISTING=$(echo "$EXISTING_RULES" | \
+      grep -o '"uid":"[^"]*".*"title":"'"$ALERT_TITLE"'"' | \
+      grep -o '"uid":"[^"]*"' | cut -d'"' -f4 | head -1) || true
+  fi
  
   if [[ -n "$EXISTING" ]]; then
     # Update existing rule

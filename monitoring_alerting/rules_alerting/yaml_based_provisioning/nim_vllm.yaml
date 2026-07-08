@@ -19,7 +19,7 @@ spec:
           annotations:
             summary: "High P99 request latency"
             description: "P99 request latency for model {{ $labels.model_name }} is {{ $value | humanize }}s (above 3s)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMQueueTooLong
           expr: vllm:num_requests_waiting > 10
@@ -29,7 +29,7 @@ spec:
           annotations:
             summary: "Request queue too long"
             description: "{{ $value | humanize }} requests are waiting in queue for model {{ $labels.model_name }} (above 10)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMKVCacheHigh
           # vLLM v1 engines expose vllm:kv_cache_usage_perc; older v0 builds expose vllm:gpu_cache_usage_perc
@@ -40,7 +40,7 @@ spec:
           annotations:
             summary: "KV cache usage high"
             description: "KV cache usage for model {{ $labels.model_name }} is {{ $value | humanizePercentage }} (above 90%)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMGPUMemoryHigh
           # vLLM does not expose GPU memory metrics; use DCGM framebuffer usage instead
@@ -51,7 +51,7 @@ spec:
           annotations:
             summary: "GPU memory critical"
             description: "GPU {{ $labels.gpu }} on {{ $labels.Hostname }} memory usage is {{ $value | humanizePercentage }} (above 95%)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMHighPreemptions
           expr: rate(vllm:num_preemptions_total[5m]) > 0.1
@@ -61,7 +61,7 @@ spec:
           annotations:
             summary: "High request preemptions"
             description: "Preemption rate for model {{ $labels.model_name }} is {{ $value | humanize }}/s (above 0.1/s)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMHighTTFT
           expr: histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket[5m])) > 2
@@ -71,7 +71,7 @@ spec:
           annotations:
             summary: "High time-to-first-token"
             description: "P95 time-to-first-token for model {{ $labels.model_name }} is {{ $value | humanize }}s (above 2s)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMLowThroughput
           expr: rate(vllm:generation_tokens_total[5m]) < 10
@@ -81,7 +81,7 @@ spec:
           annotations:
             summary: "Low token throughput"
             description: "Generation throughput for model {{ $labels.model_name }} is {{ $value | humanize }} tokens/s (below 10)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
 
         - alert: NIMRequestsFailing
           # vLLM has no failure counter; aborted requests (finished_reason="abort") are the failure signal
@@ -92,4 +92,4 @@ spec:
           annotations:
             summary: "Request failures detected"
             description: "Aborted request rate for model {{ $labels.model_name }} is {{ $value | humanize }}/s (above 0.01/s)."
-            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alers.md#prometheus-ruls-and-alerts---nim-container-with-vllm"
+            runbook_url: "https://github.com/MohammadB88/genai-application/blob/main/monitoring_alerting/rules_alerting/rules_alerts.md#prometheus-ruls-and-alerts---nim-container-with-vllm"

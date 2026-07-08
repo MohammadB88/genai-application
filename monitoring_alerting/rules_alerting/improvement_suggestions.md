@@ -76,23 +76,34 @@ catalog: `yaml_based_provisioning/` for kubectl / ArgoCD / GUI import,
 
 ## 2. Scripts (`json_based_provisioning/`)
 
-- **Bug:** `cleaunup_all.sh` uses `set -u`, then tests `[[ -z "$GRAFANA_URL" ]]` — with the
-  variable unset this aborts with "unbound variable", so the interactive-prompt path can
-  never run. Use `${GRAFANA_URL:-}` / `${GRAFANA_TOKEN:-}`; add `-uo pipefail` to the
-  deploy scripts too (they only have `set -e`).
-- **Cleanup deletes ALL Grafana alert rules**, not just ones provisioned here — dangerous
-  on a shared Grafana. Filter fetched rules by `folderUID == $GRAFANA_FOLDER_UID` (or the
-  collected `ALERT_GROUPS`) before offering deletion; add `--yes` for non-interactive runs.
-- **Replace the grep-based "rule exists" check** in the deploy scripts with
-  `jq -r '.[] | select(.title==$t) | .uid'` — jq is already required by cleanup, and grep
-  can mismatch when one title is a substring of another.
-- **Consolidate the three near-identical deploy scripts** (they differ only in config file
-  and rules dir) into one `deploy_rules.sh <gpu|nim-vllm|nim-tensorrtllm>|--all`, plus a
-  shared `lib/common.sh` for the repeated GRAFANA_URL/TOKEN prompt block.
-- **Add error handling to cleanup's curl calls** (`-sf` + exit-code check); a bad token
-  currently yields an empty response and a misleading "No alert rules found."
-- **Rename typo'd files:** `cleaunup_all.sh` → `cleanup_all.sh`,
-  `rules_alers.md` → `rules_alerts.md` (update references).
+- **[DONE 2026-07-08] Bug:** `cleaunup_all.sh` uses `set -u`, then tests
+  `[[ -z "$GRAFANA_URL" ]]` — with the variable unset this aborted with "unbound
+  variable", so the interactive-prompt path could never run. Fixed to
+  `${GRAFANA_URL:-}` / `${GRAFANA_TOKEN:-}` in `cleanup_all.sh` and all 3 deploy
+  scripts; deploy scripts also upgraded from `set -e` to `set -euo pipefail`.
+- **[DONE 2026-07-08] Cleanup deletes ALL Grafana alert rules**, not just ones
+  provisioned here. Fixed: `cleanup_all.sh` now requires `GRAFANA_FOLDER_UID` to be
+  set in `config/global.env` (refuses to run against the `your-folder-uid`
+  placeholder) and filters fetched rules by `.folderUID == $GRAFANA_FOLDER_UID`
+  via `jq` before offering deletion. Added `--yes` to skip the per-rule confirmation
+  prompt for non-interactive/CI runs.
+- **[DONE 2026-07-08] Replace the grep-based "rule exists" check** in the 3 deploy
+  scripts with `jq -r --arg t "$ALERT_TITLE" '[.[] | select(.title == $t)] | .[0].uid // empty'`.
+  Since `jq` is not guaranteed to be present on every environment (it's not in the
+  POSIX base spec, unlike the cleanup script's pre-existing hard dependency), each
+  script now checks `command -v jq` and falls back to the original grep matcher with
+  a `[WARN]` if it's missing. The original grep-only versions are preserved unchanged
+  as `deploy_rules_gpu_v0_grep.sh`, `deploy_rules_nim_vllm_v0_grep.sh`,
+  `deploy_rules_nim_tensorrtllm_v0_grep.sh` for environments known not to have `jq`.
+- **[ON HOLD] Consolidate the three near-identical deploy scripts** (they differ only
+  in config file and rules dir) into one `deploy_rules.sh <gpu|nim-vllm|nim-tensorrtllm>|--all`,
+  plus a shared `lib/common.sh` for the repeated GRAFANA_URL/TOKEN prompt block.
+- **[DONE 2026-07-08] Add error handling to cleanup's curl calls** (`-sf` + exit-code
+  check) — a bad token or unreachable Grafana now aborts with `[ERROR]` instead of
+  silently yielding an empty response and "No alert rules found."
+- **[DONE 2026-07-08] Rename typo'd files:** `cleaunup_all.sh` → `cleanup_all.sh`,
+  `rules_alers.md` → `rules_alerts.md` (via `git mv`; all `runbook_url` references
+  in the YAML rules and `.env` config files updated to match).
 
 ## 3. README / docs
 
