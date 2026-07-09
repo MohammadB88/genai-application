@@ -75,4 +75,11 @@ synced/healthy.
 - `monitoring_deploy.sh` / `monitoring_cleanup.sh` — Grafana + alerting rules
 - `web_interfaces_deploy.sh` / `web_interfaces_cleanup.sh` — AnythingLLM
 - `litemaas_deploy.sh` / `litemaas_cleanup.sh` — LiteMaaS gateway
-- `remove_resources_argocd.sh`, `remove_resources_ns.sh` — bulk removal helpers
+- `remove_resources_argocd.sh [NAMESPACE] [--repo-only] [-y]` — environment cleanup:
+  deletes ALL Argo CD Applications/AppProjects in the namespace (the built-in `default`
+  project is spared; `--repo-only` limits deletion to the ones defined in `gitops/`).
+  Applications are deleted with their cascade finalizer intact so deployed workloads
+  are removed too; finalizers are only stripped if a deletion hangs.
+- `remove_resources_ns.sh [PREFIX] [-y]` — environment cleanup: deletes all namespaces
+  starting with PREFIX (default `ic-`) after confirmation; reports the blocking
+  resources if a namespace sticks in Terminating.
