@@ -1,0 +1,15 @@
+# kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Before installation, the secret 'huggingface-secret' (key HUGGING_FACE_HUB_TOKEN)
+# must exist in the target namespace. env_preparation/models_deploy.sh creates it
+# from the HUGGING_FACE_HUB_TOKEN environment variable.
+
+namespace: llms-vllm
+
+resources:
+  - deployment.yaml
+  - pvc.yaml
+  - service.yaml
+  - route.yaml

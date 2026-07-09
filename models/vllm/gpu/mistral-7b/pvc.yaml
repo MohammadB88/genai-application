@@ -1,0 +1,14 @@
+---
+# storageClassName is set by env_preparation/models_deploy.sh during deployment.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-models-cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: ocs-external-storagecluster-ceph-rbd

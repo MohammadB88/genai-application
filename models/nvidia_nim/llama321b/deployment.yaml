@@ -29,6 +29,24 @@ spec:
         volumeMounts:
         - name: llama3-2-1b-nim-cache
           mountPath: /opt/nim/.cache
+        # First start pulls the ~10 GB image and downloads model weights into the
+        # cache PVC; the startup probe allows up to 30 minutes for that.
+        startupProbe:
+          httpGet:
+            path: /v1/health/ready
+            port: 8000
+          periodSeconds: 30
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /v1/health/ready
+            port: 8000
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /v1/health/live
+            port: 8000
+          periodSeconds: 60
         resources:
           limits:
             cpu: "4"

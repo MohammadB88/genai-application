@@ -28,6 +28,12 @@ kubectl apply -f vectordb/milvus/attu-deployment.yaml
 kubectl apply -f models/ollama/all_resources.yaml    # then: ollama pull llama3.2:3b, all-minilm:33m
 kubectl apply -f models/nvidia_nim/llama321b/
 kubectl apply -f models/nvidia_nim/llama3-8b/
+
+# Automated model deployment (interactive without args; -y for CI). Creates secrets
+# in-cluster, patches storage class in a temp copy, waits on rollout status.
+NGC_API_KEY=nvapi-... STORAGE_CLASS=<sc> ./env_preparation/models_deploy.sh nvidia_nim/llama321b -y
+HUGGING_FACE_HUB_TOKEN=hf_... ./env_preparation/models_deploy.sh vllm/gpu/mistral-7b -y
+./env_preparation/models_cleanup.sh --all -y
 kubectl apply -f web_interfaces/anythingllm/all_resources.yaml
 kubectl apply -f databases/postgres/
 ./env_preparation/postgresql_deploy.sh
@@ -53,7 +59,7 @@ Use `env_preparation/*_deploy.sh` / `env_preparation/*_cleanup.sh` for full comp
 - **SecurityContext**: `runAsNonRoot: true`, `capabilities.drop: ["ALL"]`; for Milvus StatefulSets set pod securityContext to `{}`
 - **ServiceMonitor**: metrics at `/v1/metrics`, labels `{app: <model-name>}`, requires `enableUserWorkload: true`
 - **Default creds**: MinIO `minio/minio123`, Milvus `root/Milvus`
-- **Kustomize** paths: `models/*/kustomization.yaml`, `s3_storage/minio_on_openshift/kustomization.yaml`, `web_interfaces/anythingllm/kustomization.yaml`
+- **Kustomize** paths: `models/**/kustomization.yaml` (each sets its target `namespace:`; `models_deploy.sh` discovers models by these files), `s3_storage/minio_on_openshift/kustomization.yaml`, `web_interfaces/anythingllm/kustomization.yaml`
 
 ## RAG Flow
 
