@@ -1,7 +1,7 @@
 # Environment Preparations
 
 Deploy/cleanup scripts for the platform components. Shared helpers (colors, `oc`/`kubectl`
-detection, namespace utilities) live in [lib/common.sh](lib/common.sh).
+detection, namespace utilities) live in [common.sh](common.sh).
 
 ## Model deployment (`models_deploy.sh`)
 
