@@ -5,6 +5,9 @@ kind: Application
 metadata:
   name: llama321b
   namespace: openshift-gitops  # or your Argo CD namespace
+  # Cascade deletion: deleting this Application also deletes what it deployed.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default  # previously llms
   source:

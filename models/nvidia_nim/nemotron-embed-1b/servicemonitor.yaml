@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nemotron-embed-1b-monitor
+  namespace: llms   # replace with your app namespace
+  labels:
+    app: nemotron-embed-1b
+spec:
+  selector:
+    matchLabels:
+      app: nemotron-embed-1b
+  namespaceSelector:
+    matchNames:
+    - llms           # same as metadata.namespace
+  endpoints:
+  - port: http                    # refers to the named port in your Service
+    interval: 30s                 # or adjust as needed
+    path: /v1/metrics             # NIM metrics endpoint
+    scheme: http                  # or https if your app exposes TLS

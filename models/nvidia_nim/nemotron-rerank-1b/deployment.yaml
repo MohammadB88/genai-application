@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemotron-rerank-1b
+  labels:
+    app: nemotron-rerank-1b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nemotron-rerank-1b
+  template:
+    metadata:
+      labels:
+        app: nemotron-rerank-1b
+    spec:
+      containers:
+      - name: nemotron-rerank-1b
+        image: nvcr.io/nim/nvidia/llama-nemotron-rerank-1b-v2:1.1
+        ports:
+        - containerPort: 8000
+        env:
+        - name: NGC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ngc-api-key
+              key: NGC_API_KEY
+        volumeMounts:
+        - name: nemotron-rerank-1b-nim-cache
+          mountPath: /opt/nim/.cache
+        # First start pulls the image and downloads model weights into the
+        # cache PVC; the startup probe allows up to 30 minutes for that.
+        startupProbe:
+          httpGet:
+            path: /v1/health/ready
+            port: 8000
+          periodSeconds: 30
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /v1/health/ready
+            port: 8000
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /v1/health/live
+            port: 8000
+          periodSeconds: 60
+        resources:
+          limits:
+            cpu: "4"
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "2"
+            memory: 4Gi
+            nvidia.com/gpu: "1"
+      volumes:
+      - name: nemotron-rerank-1b-nim-cache
+        persistentVolumeClaim:
+          claimName: nemotron-rerank-1b-nim-cache
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      imagePullSecrets:
+      - name: nim-pull-secret

@@ -80,7 +80,7 @@ oc create secret generic ngc-api-key --from-literal=NGC_API_KEY='nvapi-XXXXX'
 kubectl apply -f models/nvidia_nim/<model-dir>/
 ```
 
-Models: llama321b, llama3-8b, deploy_nim_s3, mistral-7b, phi-3-mini, qwen25-7b
+Models: llama321b, llama3-8b, nemotron-embed-1b, nemotron-rerank-1b, deploy_nim_s3, mistral-7b, phi-3-mini, qwen25-7b
 
 ## vLLM (via OpenShift AI UI)
 

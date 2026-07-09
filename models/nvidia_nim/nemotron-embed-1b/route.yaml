@@ -1,0 +1,17 @@
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: nemotron-embed-1b
+  labels:
+    app: nemotron-embed-1b
+spec:
+  to:
+    kind: Service
+    name: nemotron-embed-1b
+    weight: 100
+  port:
+    targetPort: 8000
+  tls:
+    termination: edge
+  wildcardPolicy: None

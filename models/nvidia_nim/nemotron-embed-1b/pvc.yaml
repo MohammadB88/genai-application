@@ -1,0 +1,16 @@
+---
+# storageClassName is replaced by env_preparation/models_deploy.sh during deployment.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nemotron-embed-1b-nim-cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 20Gi
+  # storageClassName: ocs-storagecluster-ceph-rbd
+  storageClassName: ocs-external-storagecluster-ceph-rbd
+  # storageClassName: placeholder-storageclass
